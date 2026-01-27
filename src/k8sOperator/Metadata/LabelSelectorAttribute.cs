@@ -1,0 +1,11 @@
+﻿namespace k8s.Operator.Metadata;
+
+[AttributeUsage(AttributeTargets.Class)]
+public class LabelSelectorAttribute(string labelSelector) : Attribute
+{
+    public static LabelSelectorAttribute Default => new(string.Empty);
+
+    public string LabelSelector { get; } = labelSelector;
+    public override string ToString()
+        => DebuggerHelpers.GetDebugText(nameof(LabelSelector), LabelSelector);
+}

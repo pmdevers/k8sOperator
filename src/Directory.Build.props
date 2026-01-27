@@ -1,0 +1,55 @@
+﻿<!-- See https://aka.ms/dotnet/msbuild/customize for more details on customizing your build -->
+<Project>
+	<PropertyGroup>
+		<IsPackable>true</IsPackable>
+		<CompanyName>Pmdevers</CompanyName>
+
+		<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+		<GenerateSBOM>true</GenerateSBOM>
+
+		<Description>
+			/// TODO
+		</Description>
+		<PackageTags>
+s
+		</PackageTags>
+
+		<Authors>Patrick Evers</Authors>
+		<Owners>$(CompanyName)</Owners>
+
+
+		<!-- Redefine MSBuild Properties -->
+		<Company>$(CompanyName)</Company>
+		<RootNamespace>$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
+
+		<PackageIcon>logo_128.png</PackageIcon>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageProjectUrl>https://github.com/pmdevers/k8sOperator</PackageProjectUrl>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<RepositoryType>git</RepositoryType>
+		<RepositoryUrl>https://github.com/pmdevers/k8sOperator</RepositoryUrl>
+
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Include="..\..\assets\logo_128.png">
+			<Pack>True</Pack>
+			<Visible>False</Visible>
+			<PackagePath>\</PackagePath>
+		</None>
+		<None Include="..\..\README.md">
+			<Pack>True</Pack>
+			<Visible>False</Visible>
+			<PackagePath>\</PackagePath>
+		</None>
+		<InternalsVisibleTo Include="$(ProjectName).Tests"/>
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="SonarAnalyzer.CSharp" PrivateAssets="all" />
+		<PackageReference Include="Microsoft.Sbom.Targets" PrivateAssets="all" />
+	</ItemGroup>
+</Project>
