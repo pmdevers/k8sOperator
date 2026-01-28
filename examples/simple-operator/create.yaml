@@ -1,0 +1,7 @@
+spec:
+  replicas: 0
+metadata:
+  name: myapp
+  namespace: default
+apiVersion: example.io/v1
+kind: MyApp

@@ -5,5 +5,7 @@
 /// </summary>
 public interface IController
 {
+    IReadOnlyList<object> Metadata { get; }
+    Type ResourceType { get; }
     Task RunAsync(CancellationToken cancellationToken);
 }

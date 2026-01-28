@@ -1,4 +1,4 @@
-﻿using k8s.Models;
+﻿using k8s.Operator;
 using k8s.Operator.Controller;
 using k8s.Operator.Informer;
 using k8s.Operator.Models;
@@ -12,13 +12,6 @@ namespace k8s.Operator.Builders;
 
 public delegate Task ReconcileDelegate(OperatorContext context);
 
-public class OperatorContext
-{
-    public IServiceProvider RequestServices { get; set; }
-    public IKubernetesObject<V1ObjectMeta>? Resource { get; set; }
-    public ResourceKey ResourceKey { get; set; }
-}
-
 public class ControllerBuilder(IServiceProvider serviceProvider, Type resourceType)
 {
     public IServiceProvider ServiceProvider { get; } = serviceProvider;
@@ -27,7 +20,7 @@ public class ControllerBuilder(IServiceProvider serviceProvider, Type resourceTy
 
     public ReconcileDelegate? Handler { get; private set; }
 
-    public List<object> MetaData { get; } = [];
+    public List<object> MetaData { get; } = resourceType.GetCustomAttributes(inherit: true).ToList();
 
     public ControllerBuilder WithHandler(ReconcileDelegate handler)
     {
@@ -38,7 +31,7 @@ public class ControllerBuilder(IServiceProvider serviceProvider, Type resourceTy
     public IController Build()
     {
         ArgumentNullException.ThrowIfNull(Handler);
-        var controllerType = typeof(InformerController<>).MakeGenericType(ResourceType);
+        var controllerType = typeof(OperatorController<>).MakeGenericType(ResourceType);
         var factory = ServiceProvider.GetRequiredService<IInformerFactory>();
         var queue = ServiceProvider.GetRequiredService<IWorkQueue<ResourceKey>>();
         var logger = ServiceProvider.GetRequiredService(typeof(ILogger<>).MakeGenericType(controllerType));
@@ -49,6 +42,7 @@ public class ControllerBuilder(IServiceProvider serviceProvider, Type resourceTy
             factory,
             queue,
             Handler,
+            MetaData.AsReadOnly(),
             logger
         ) as IController ?? throw new InvalidOperationException($"Could not create controller of type {controllerType.FullName}");
     }
@@ -220,6 +214,13 @@ public static class DelegateFactory
             return ContextExpr;
         }
 
+        if (parameter.ParameterType == typeof(CancellationToken))
+        {
+            factoryContext.TrackedParameters.Add(parameter.Name, "Cancellation (Inferred)");
+            var resourceExpr = Expression.Property(ContextExpr, nameof(OperatorContext.CancellationToken));
+            return Expression.Convert(resourceExpr, parameter.ParameterType);
+        }
+
         if (parameter.ParameterType == factoryContext.Builder.ResourceType)
         {
             factoryContext.TrackedParameters.Add(parameter.Name, "Resource (Inferred)");
@@ -248,7 +249,7 @@ public static class DelegateFactory
     private static readonly ParameterExpression ContextExpr = Expression.Parameter(typeof(OperatorContext), "context");
     private static readonly ParameterExpression TargetExpr = Expression.Parameter(typeof(object), "target");
     private static readonly MemberExpression RequestServicesExpr = Expression.Property(ContextExpr,
-        typeof(OperatorContext).GetProperty(nameof(OperatorContext.RequestServices))!);
+        typeof(OperatorContext).GetProperty(nameof(OperatorContext.Services))!);
 
     private static readonly MethodInfo GetRequiredServiceMethod = typeof(ServiceProviderServiceExtensions)
         .GetMethod(nameof(ServiceProviderServiceExtensions.GetRequiredService),

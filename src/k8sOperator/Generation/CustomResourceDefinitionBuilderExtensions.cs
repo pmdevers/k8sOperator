@@ -140,6 +140,16 @@ public static partial class CustomResourceDefinitionBuilderExtensions
         return builder;
     }
 
+    public static TBuilder WithSubResources<TBuilder>(this TBuilder builder)
+        where TBuilder : IObjectBuilder<V1CustomResourceDefinitionVersion>
+    {
+        builder.Add(x => x.Subresources = new V1CustomResourceSubresources()
+        {
+            Status = new(),
+        });
+        return builder;
+    }
+
     public static TBuilder WithAdditionalPrinterColumn<TBuilder>(this TBuilder builder,
         string name, string type, string description, string jsonPath, int priority = 0)
          where TBuilder : IObjectBuilder<V1CustomResourceDefinitionVersion>

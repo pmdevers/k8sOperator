@@ -5,5 +5,7 @@
   <Folder Name="/src/">
     <Project Path="src/k8sOperator/k8sOperator.csproj" Id="d84c3fff-673a-4b05-9c92-950ffe42fdd4" />
   </Folder>
-  <Folder Name="/tests/" />
+  <Folder Name="/test/">
+    <Project Path="test/k8sOperator.Tests/k8sOperator.Tests.csproj" Id="6e22443a-a57c-4c02-a8ac-ad9b329ed002" />
+  </Folder>
 </Solution>

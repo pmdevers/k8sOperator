@@ -1,5 +1,4 @@
-﻿using k8s;
-using k8s.Models;
+﻿using k8s.Models;
 
 namespace k8s.Operator.Generation;
 

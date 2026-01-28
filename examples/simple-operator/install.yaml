@@ -1,0 +1,243 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: todoitems.app.example.com
+spec:
+  group: app.example.com
+  names:
+    kind: TodoItem
+    listKind: TodoItemList
+    plural: todoitems
+    singular: todoitem
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - description: Todo Title
+      jsonPath: .spec.title
+      name: Title
+      priority: 0
+      type: string
+    - description: Todo Description
+      jsonPath: .spec.description
+      name: Description
+      priority: 0
+      type: string
+    - description: Todo State
+      jsonPath: .status.state
+      name: State
+      priority: 0
+      type: string
+    name: v1
+    schema:
+      openAPIV3Schema:
+        properties:
+          status:
+            nullable: false
+            properties:
+              state:
+                nullable: false
+                type: string
+              completedAt:
+                nullable: true
+                type: string
+              message:
+                nullable: false
+                type: string
+              reconciliationCount:
+                nullable: false
+                type: integer
+            required:
+            - state
+            - message
+            - reconciliationCount
+            type: object
+          spec:
+            nullable: false
+            properties:
+              title:
+                nullable: false
+                type: string
+              description:
+                nullable: false
+                type: string
+              priority:
+                nullable: false
+                type: string
+              dueDate:
+                nullable: true
+                type: string
+            required:
+            - title
+            - description
+            - priority
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: myapps.example.io
+spec:
+  group: example.io
+  names:
+    kind: MyApp
+    listKind: MyAppList
+    plural: myapps
+    singular: myapp
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        properties:
+          status:
+            nullable: false
+            properties:
+              phase:
+                nullable: false
+                type: string
+              readyReplicas:
+                nullable: false
+                type: integer
+            required:
+            - readyReplicas
+            type: object
+          spec:
+            nullable: false
+            properties:
+              replicas:
+                nullable: false
+                type: integer
+              image:
+                nullable: false
+                type: string
+            required:
+            - replicas
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: simple-operator-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - get
+  - list
+  - create
+  - update
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - create
+  - update
+  - get
+- apiGroups:
+  - app.example.com
+  resources:
+  - todoitems
+  verbs:
+  - '*'
+- apiGroups:
+  - app.example.com
+  resources:
+  - todoitems/status
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
+  - example.io
+  resources:
+  - myapps
+  verbs:
+  - '*'
+- apiGroups:
+  - example.io
+  resources:
+  - myapps/status
+  verbs:
+  - get
+  - update
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: simple-operator-role-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: simple-operator-role
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: default
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: default
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    operator: simple-operator
+  name: simple-operator
+  namespace: default
+spec:
+  replicas: 1
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      operator: simple-operator
+  template:
+    metadata:
+      labels:
+        operator: simple-operator
+    spec:
+      containers:
+      - env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        image: ghcr.io/myorg/simple-operator:v1.0.0
+        name: simple-operator
+        resources:
+          limits:
+            cpu: 100m
+            memory: 128Mi
+          requests:
+            cpu: 100m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          runAsGroup: 2024
+          runAsNonRoot: true
+          runAsUser: 2024
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      terminationGracePeriodSeconds: 10
+---
+

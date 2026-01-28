@@ -1,14 +1,45 @@
 ﻿{
   "$schema": "https://json.schemastore.org/launchsettings.json",
-  "profiles": {
-    "http": {
-      "commandName": "Project",
-      "dotnetRunMessages": true,
-      "launchBrowser": false,
-      "applicationUrl": "http://localhost:5137",
-      "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
-      }
+    "profiles": {
+        "Help": {
+            "applicationUrl": "http://localhost:5137",
+            "commandLineArgs": "help",
+            "commandName": "Project",
+            "dotnetRunMessages": true,
+            "environmentVariables": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            },
+            "launchBrowser": false
+        },
+        "Create": {
+            "applicationUrl": "http://localhost:5137",
+            "commandLineArgs": "create myapp > create.yaml",
+            "commandName": "Project",
+            "dotnetRunMessages": true,
+            "environmentVariables": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            },
+            "launchBrowser": false
+        },
+        "Install": {
+            "applicationUrl": "http://localhost:5137",
+            "commandLineArgs": "install > install.yaml",
+            "commandName": "Project",
+            "dotnetRunMessages": true,
+            "environmentVariables": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            },
+            "launchBrowser": false
+        },
+        "Operator": {
+            "applicationUrl": "http://localhost:5137",
+            "commandLineArgs": "operator",
+            "commandName": "Project",
+            "dotnetRunMessages": true,
+            "environmentVariables": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            },
+            "launchBrowser": false
+        }
     }
-  }
 }

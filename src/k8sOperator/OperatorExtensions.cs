@@ -1,5 +1,7 @@
 using k8s.Operator.Builders;
 using k8s.Operator.Configuration;
+using k8s.Operator.Host;
+using k8s.Operator.Host.Commands;
 using k8s.Operator.Informer;
 using k8s.Operator.Leader;
 using k8s.Operator.Models;
@@ -8,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using System.Reflection;
 
 namespace k8s.Operator;
 
@@ -25,13 +28,15 @@ public static class OperatorExtensions
 
             services.TryAddSingleton<ControllerDatasource>();
             services.TryAddSingleton<IInformerFactory, InformerFactory>();
-            services.TryAddSingleton(typeof(IWorkQueue<>), typeof(WorkQueue<>));
-            services.TryAddSingleton<IKubernetes>((sp) =>
+            services.TryAddTransient(typeof(IWorkQueue<>), typeof(WorkQueue<>));
+
+            services.TryAddSingleton<IKubernetes>((_) =>
             {
                 var config = builder?.Configuration
                     ?? KubernetesClientConfiguration.BuildDefaultConfig();
                 return new Kubernetes(config);
             });
+
             services.TryAddSingleton(sp =>
             {
                 var configuration = sp.GetService<IConfiguration>();
@@ -81,6 +86,26 @@ public static class OperatorExtensions
                 return (ILeaderElectionService)ActivatorUtilities.CreateInstance(sp, type);
             });
 
+            // Register command infrastructure
+            services.TryAddSingleton(sp =>
+            {
+                var registry = new CommandRegistry();
+
+                // Discover and register built-in commands
+                registry.DiscoverCommands(typeof(HelpCommand).Assembly);
+                registry.DiscoverCommands(Assembly.GetCallingAssembly());
+
+                // Discover commands in entry assembly
+                var entryAssembly = Assembly.GetEntryAssembly();
+                if (entryAssembly != null)
+                {
+                    registry.DiscoverCommands(entryAssembly);
+                }
+
+                return registry;
+            });
+
+
             services.AddHostedService<OperatorService>();
             return services;
         }
@@ -94,5 +119,14 @@ public static class OperatorExtensions
             var datasource = app.Services.GetRequiredService<ControllerDatasource>();
             return datasource.AddResource<TResource>(handler);
         }
+
+        public async Task<int> RunOperatorAsync()
+        {
+            var args = Environment.GetCommandLineArgs().Skip(1).ToArray();
+            var registry = app.Services.GetRequiredService<CommandRegistry>();
+            var handler = new CommandHandler(app, registry);
+            return await handler.HandleAsync(args);
+        }
+
     }
 }
