@@ -1,5 +1,4 @@
 ﻿using k8s.Models;
-using System.Reflection;
 using System.Text.Json.Serialization;
 
 namespace k8s.Operator.Models;
@@ -9,11 +8,6 @@ namespace k8s.Operator.Models;
 /// </summary>
 public abstract class CustomResource : KubernetesObject, IKubernetesObject<V1ObjectMeta>
 {
-    public KubernetesEntityAttribute GetDefinition<TResource>()
-    {
-        return typeof(TResource).GetCustomAttribute<KubernetesEntityAttribute>()!;
-    }
-
     /// <inheritdoc />
     [JsonPropertyName("metadata")]
     public V1ObjectMeta Metadata { get; set; } = new V1ObjectMeta();

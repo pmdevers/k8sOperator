@@ -20,7 +20,7 @@ public class ControllerBuilder(IServiceProvider serviceProvider, Type resourceTy
 
     public ReconcileDelegate? Handler { get; private set; }
 
-    public List<object> MetaData { get; } = resourceType.GetCustomAttributes(inherit: true).ToList();
+    public List<object> MetaData { get; } = [.. resourceType.GetCustomAttributes(inherit: true)];
 
     public ControllerBuilder WithHandler(ReconcileDelegate handler)
     {

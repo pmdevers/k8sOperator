@@ -5,7 +5,7 @@ namespace k8s.Operator.Host;
 public class CommandRegistry
 {
     private readonly Dictionary<string, Type> _commands = new(StringComparer.OrdinalIgnoreCase);
-    private readonly List<Type> _allCommandTypes = new();
+    private readonly List<Type> _allCommandTypes = [];
 
     public void RegisterCommand<TCommand>() where TCommand : IOperatorCommand
     {

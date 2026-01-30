@@ -1,6 +1,6 @@
-﻿using k8s.Models;
-using k8s.Operator;
+﻿using k8s.Operator;
 using k8s.Operator.Cache;
+using k8s.Operator.Models;
 using System.Collections.Concurrent;
 
 namespace k8s.Operator.Informer;
@@ -11,7 +11,7 @@ public class InformerFactory(IKubernetes client) : IInformerFactory
     private readonly ConcurrentDictionary<Type, IInformerInternal> _informers = new();
 
     public IInformer<TResource> GetInformer<TResource>(TimeSpan? resyncPeriod = null)
-        where TResource : IKubernetesObject<V1ObjectMeta>
+        where TResource : CustomResource
     {
         var type = typeof(IInformer<TResource>);
 

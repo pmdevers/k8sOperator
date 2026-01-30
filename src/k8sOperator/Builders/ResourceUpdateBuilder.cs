@@ -1,21 +1,12 @@
 ﻿using k8s.Operator.Models;
-using Microsoft.Extensions.Logging;
 
 namespace k8s.Operator.Builders;
 
-public class ResourceUpdateBuilder<TResource> where TResource : CustomResource
+public class ResourceUpdateBuilder<TResource>(IKubernetes kubernetes, TResource resource) where TResource
+    : CustomResource
 {
-    private readonly IKubernetes _kubernetes;
-    private readonly TResource _resource;
-    private readonly ILogger<TResource> _logger;
     private readonly List<Action<TResource>> _updates = [];
     private bool _updateStatus;
-
-    public ResourceUpdateBuilder(IKubernetes kubernetes, TResource resource)
-    {
-        _kubernetes = kubernetes;
-        _resource = resource;
-    }
 
     public ResourceUpdateBuilder<TResource> WithSpec(Action<TResource> update)
     {
@@ -74,15 +65,15 @@ public class ResourceUpdateBuilder<TResource> where TResource : CustomResource
 
     public async Task<TResource> ApplyAsync(CancellationToken cancellationToken = default)
     {
-        var crd = _resource.GetDefinition<TResource>();
+        var crd = resource.GetDefinition();
 
         // Get the LATEST version from the API server (not cache)
-        var latest = await _kubernetes.CustomObjects.GetNamespacedCustomObjectAsync<TResource>(
+        var latest = await kubernetes.CustomObjects.GetNamespacedCustomObjectAsync<TResource>(
             group: crd.Group,
             version: crd.ApiVersion,
-            namespaceParameter: _resource.Metadata.NamespaceProperty,
+            namespaceParameter: resource.Metadata.NamespaceProperty,
             plural: crd.PluralName,
-            name: _resource.Metadata.Name,
+            name: resource.Metadata.Name,
             cancellationToken: cancellationToken);
 
         foreach (var update in _updates)
@@ -93,23 +84,23 @@ public class ResourceUpdateBuilder<TResource> where TResource : CustomResource
         if (_updateStatus)
         {
 
-            return await _kubernetes.CustomObjects.ReplaceNamespacedCustomObjectStatusAsync<TResource>(
+            return await kubernetes.CustomObjects.ReplaceNamespacedCustomObjectStatusAsync<TResource>(
                 body: latest,
                 group: crd.Group,
                 version: crd.ApiVersion,
                 plural: crd.PluralName,
-                name: _resource.Metadata.Name,
-                namespaceParameter: _resource.Metadata.NamespaceProperty,
+                name: resource.Metadata.Name,
+                namespaceParameter: resource.Metadata.NamespaceProperty,
                 cancellationToken: cancellationToken);
         }
 
-        return await _kubernetes.CustomObjects.ReplaceNamespacedCustomObjectAsync<TResource>(
+        return await kubernetes.CustomObjects.ReplaceNamespacedCustomObjectAsync<TResource>(
             body: latest,
             group: crd.Group,
             version: crd.ApiVersion,
             plural: crd.PluralName,
-            name: _resource.Metadata.Name,
-            namespaceParameter: _resource.Metadata.NamespaceProperty,
+            name: resource.Metadata.Name,
+            namespaceParameter: resource.Metadata.NamespaceProperty,
             cancellationToken: cancellationToken);
     }
 }

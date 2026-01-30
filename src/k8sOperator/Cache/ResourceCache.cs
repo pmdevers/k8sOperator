@@ -1,11 +1,10 @@
-﻿using k8s.Models;
-using k8s.Operator.Models;
+﻿using k8s.Operator.Models;
 using System.Collections.Concurrent;
 
 namespace k8s.Operator.Cache;
 
 internal class ResourceCache<TResource> : IResourceCache<TResource>
-    where TResource : IKubernetesObject<V1ObjectMeta>
+    where TResource : CustomResource
 {
     private readonly ConcurrentDictionary<(string ns, string name), TResource> _items = [];
 

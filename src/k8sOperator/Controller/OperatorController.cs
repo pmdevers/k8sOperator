@@ -1,5 +1,4 @@
-﻿using k8s.Models;
-using k8s.Operator;
+﻿using k8s.Operator;
 using k8s.Operator.Builders;
 using k8s.Operator.Informer;
 using k8s.Operator.Models;
@@ -16,7 +15,7 @@ public class OperatorController<TResource>(
     ReconcileDelegate reconcile,
     IReadOnlyList<object> metadata,
     ILogger logger) : IController
-    where TResource : IKubernetesObject<V1ObjectMeta>
+    where TResource : CustomResource
 {
     private readonly IInformer<TResource> _informer = informerFactory.GetInformer<TResource>();
 

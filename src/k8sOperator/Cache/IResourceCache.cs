@@ -7,6 +7,7 @@ namespace k8s.Operator.Cache;
 /// </summary>
 /// <typeparam name="TResource">The type of the resource being cached.</typeparam>
 public interface IResourceCache<TResource>
+    where TResource : CustomResource
 {
     /// <summary>
     /// Lists all resources currently in the cache.

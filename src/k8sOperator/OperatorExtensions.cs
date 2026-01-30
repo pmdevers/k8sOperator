@@ -1,3 +1,4 @@
+using k8s.Models;
 using k8s.Operator.Builders;
 using k8s.Operator.Configuration;
 using k8s.Operator.Host;
@@ -19,6 +20,14 @@ namespace k8s.Operator;
 /// </summary>
 public static class OperatorExtensions
 {
+    extension(CustomResource resource)
+    {
+        public KubernetesEntityAttribute GetDefinition()
+        {
+            return resource.GetType().GetCustomAttribute<KubernetesEntityAttribute>()!;
+        }
+    }
+
     extension(IServiceCollection services)
     {
         public IServiceCollection AddOperator(Action<OperatorBuilder>? configure = null)

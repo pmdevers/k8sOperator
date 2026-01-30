@@ -3,6 +3,7 @@
 namespace k8s.Operator.Informer;
 
 public interface IInformer<TResource>
+    where TResource : CustomResource
 {
     IAsyncEnumerable<WatchEvent<TResource>> Events { get; }
 
