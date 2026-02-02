@@ -11,9 +11,20 @@
             },
             "launchBrowser": false
         },
-        "Create": {
+
+        "Create Release": {
             "applicationUrl": "http://localhost:5137",
-            "commandLineArgs": "create myapp > create.yaml",
+            "commandLineArgs": "create release > release.yaml",
+            "commandName": "Project",
+            "dotnetRunMessages": true,
+            "environmentVariables": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            },
+            "launchBrowser": false
+        },
+        "Create Provider": {
+            "applicationUrl": "http://localhost:5137",
+            "commandLineArgs": "create provider > provider.yaml",
             "commandName": "Project",
             "dotnetRunMessages": true,
             "environmentVariables": {
@@ -43,4 +54,3 @@
         }
     }
 }
-

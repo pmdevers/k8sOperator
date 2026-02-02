@@ -1,0 +1,20 @@
+﻿using k8s.Models;
+using k8s.Operator.Models;
+
+namespace k8s.Frontman.Features.Providers;
+
+[KubernetesEntity(Group = "frontman.io", ApiVersion = "v1alpha", Kind = "Provider", PluralName = "providers")]
+public class Provider : CustomResource<Provider.Specs, Provider.State>
+{
+    public class Specs
+    {
+        public FileProviderOptions? File { get; set; }
+        public AzureBlobProviderOptions? AzureBlob { get; set; }
+    }
+
+    public class State
+    {
+        public int NumberOfReleases { get; set; }
+        public string[] Versions { get; set; }
+    }
+}
