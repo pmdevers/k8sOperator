@@ -11,6 +11,6 @@
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.2" />
     <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.18.0.131500" />
     <PackageVersion Include="Microsoft.Sbom.Targets" Version="4.1.5" />
-    <PackageVersion Include="TUnit" Version="1.12.58" />
+    <PackageVersion Include="TUnit" Version="1.12.125" />
   </ItemGroup>
 </Project>
