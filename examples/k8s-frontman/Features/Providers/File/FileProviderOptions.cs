@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.FileProviders;
 
-namespace k8s.Frontman.Features.Providers;
+namespace k8s.Frontman.Features.Providers.File;
 
 public class FileProviderOptions : IFileProviderFactory
 {

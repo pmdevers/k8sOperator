@@ -1,9 +1,8 @@
-﻿using k8s.Frontman.Features.Providers.Azure;
-using Microsoft.Extensions.FileProviders;
+﻿using Microsoft.Extensions.FileProviders;
 
-namespace k8s.Frontman.Features.Providers;
+namespace k8s.Frontman.Features.Providers.Azure;
 
-public class AzureBlobProviderOptions : IFileProviderFactory
+public class AzureBlobFileProviderOptions : IFileProviderFactory
 {
     public string AccountName { get; set; }
     public string AccountKey { get; set; }
