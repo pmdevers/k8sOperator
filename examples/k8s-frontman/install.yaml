@@ -11,7 +11,7 @@ spec:
     singular: provider
   scope: Namespaced
   versions:
-  - name: v1alpha
+  - name: v1alpha1
     schema:
       openAPIV3Schema:
         properties:
@@ -22,21 +22,11 @@ spec:
                 nullable: false
                 type: integer
               versions:
+                items:
+                  nullable: false
+                  type: string
                 nullable: false
-                properties:
-                  capacity:
-                    nullable: false
-                    type: integer
-                  count:
-                    nullable: false
-                    type: integer
-                  item:
-                    nullable: false
-                    type: string
-                required:
-                - capacity
-                - count
-                type: object
+                type: array
             required:
             - numberOfReleases
             - versions
@@ -93,12 +83,47 @@ spec:
     singular: release
   scope: Namespaced
   versions:
-  - name: v1alpha
+  - additionalPrinterColumns:
+    - description: ""
+      jsonPath: .spec.url
+      name: Url
+      priority: 0
+      type: string
+    - description: ""
+      jsonPath: .spec.version
+      name: Version
+      priority: 0
+      type: string
+    - description: ""
+      jsonPath: .status.previousVersion
+      name: Previous
+      priority: 0
+      type: string
+    - description: ""
+      jsonPath: .status.message
+      name: Message
+      priority: 0
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         properties:
           status:
             nullable: false
+            properties:
+              currentVersion:
+                nullable: false
+                type: string
+              previousVersion:
+                nullable: false
+                type: string
+              message:
+                nullable: false
+                type: string
+            required:
+            - currentVersion
+            - previousVersion
+            - message
             type: object
           spec:
             nullable: false

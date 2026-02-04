@@ -14,22 +14,28 @@ IInformer<TResource>, IInformerInternal
 where TResource : CustomResource
 {
     private readonly IKubernetes _client;
+    private readonly string? _namespace;
     private readonly IResourceCache<TResource> _cache;
     private readonly Channel<WatchEvent<TResource>> _events;
     private readonly TimeSpan _resyncPeriod;
     private string? _lastResourceVersion;
+    private readonly KubernetesEntityAttribute _entityInfo;
 
     private volatile bool _synced;
 
     public ResourceInformer(
         IKubernetes client,
+        string? ns,
         IResourceCache<TResource> cache,
         TimeSpan? resyncPeriod = null)
     {
         _client = client;
+        _namespace = ns;
         _cache = cache;
         _events = Channel.CreateUnbounded<WatchEvent<TResource>>();
         _resyncPeriod = resyncPeriod ?? TimeSpan.FromMinutes(10);
+        _entityInfo = typeof(TResource).GetCustomAttribute<KubernetesEntityAttribute>()
+            ?? throw new InvalidOperationException($"Type {typeof(TResource).Name} must have KubernetesEntityAttribute");
     }
 
     public bool HasSynced => _synced;
@@ -57,17 +63,29 @@ where TResource : CustomResource
 
     private async Task<KubernetesList<TResource>> ListResourcesAsync(CancellationToken cancellationToken)
     {
-        var attr = typeof(TResource).GetCustomAttribute<KubernetesEntityAttribute>() ?? throw new InvalidOperationException();
-
-        var response = await _client.CustomObjects.ListClusterCustomObjectAsync<KubernetesList<TResource>>(
-            group: attr.Group,
-            version: attr.ApiVersion,
-            plural: attr.PluralName,
-            allowWatchBookmarks: true,
-            labelSelector: "",
-            cancellationToken: cancellationToken);
-
-        return response;
+        if (_namespace != null)
+        {
+            return await _client.CustomObjects.ListNamespacedCustomObjectAsync<KubernetesList<TResource>>(
+                group: _entityInfo.Group,
+                version: _entityInfo.ApiVersion,
+                plural: _entityInfo.PluralName,
+                namespaceParameter: _namespace,
+                allowWatchBookmarks: true,
+                labelSelector: "",
+                cancellationToken: cancellationToken
+                );
+        }
+        else
+        {
+            return await _client.CustomObjects.ListClusterCustomObjectAsync<KubernetesList<TResource>>(
+                group: _entityInfo.Group,
+                version: _entityInfo.ApiVersion,
+                plural: _entityInfo.PluralName,
+                allowWatchBookmarks: true,
+                labelSelector: "",
+                cancellationToken: cancellationToken
+            );
+        }
     }
 
     private async Task WatchLoop(CancellationToken cancellationToken)
@@ -139,17 +157,38 @@ where TResource : CustomResource
 
     private async IAsyncEnumerable<WatchEvent<TResource>> GetWatchStream([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var attr = typeof(TResource).GetCustomAttribute<KubernetesEntityAttribute>() ?? throw new InvalidOperationException();
 
-        await foreach (var (type, item) in _client.CustomObjects.WatchListClusterCustomObjectAsync(
-                group: attr.Group,
-                version: attr.ApiVersion,
-                plural: attr.PluralName,
+        IAsyncEnumerable<(WatchEventType, object)> watchStream;
+
+        if (_namespace != null)
+        {
+            // Watch namespace-scoped resources
+            watchStream = _client.CustomObjects.WatchListNamespacedCustomObjectAsync(
+                group: _entityInfo.Group,
+                version: _entityInfo.ApiVersion,
+                plural: _entityInfo.PluralName,
+                namespaceParameter: _namespace,
                 allowWatchBookmarks: true,
                 resourceVersion: _lastResourceVersion,
                 labelSelector: "",
                 timeoutSeconds: (int)TimeSpan.FromMinutes(60).TotalSeconds,
-                cancellationToken: cancellationToken))
+                cancellationToken: cancellationToken);
+        }
+        else
+        {
+            // Watch cluster-scoped resources
+            watchStream = _client.CustomObjects.WatchListClusterCustomObjectAsync(
+                group: _entityInfo.Group,
+                version: _entityInfo.ApiVersion,
+                plural: _entityInfo.PluralName,
+                allowWatchBookmarks: true,
+                resourceVersion: _lastResourceVersion,
+                labelSelector: "",
+                timeoutSeconds: (int)TimeSpan.FromMinutes(60).TotalSeconds,
+                cancellationToken: cancellationToken);
+        }
+
+        await foreach (var (type, item) in watchStream)
         {
             yield return new()
             {

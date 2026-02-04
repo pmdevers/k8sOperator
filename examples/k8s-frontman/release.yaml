@@ -1,0 +1,6 @@
+spec: {}
+metadata:
+  name: release
+  namespace: default
+apiVersion: frontman.io/v1alpha1
+kind: Release

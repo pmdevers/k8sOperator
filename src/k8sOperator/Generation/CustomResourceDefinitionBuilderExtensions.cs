@@ -305,6 +305,42 @@ public static partial class CustomResourceDefinitionBuilderExtensions
             return builder.OfType(type.GenericTypeArguments[0], true);
         }
 
+        // Handle array types
+        if (type.IsArray)
+        {
+            var elementType = type.GetElementType()!;
+            var itemSchema = new ObjectBuilder<V1JSONSchemaProps>();
+            itemSchema.OfType(elementType);
+
+            builder.Add(x =>
+            {
+                x.Type = "array";
+                x.Items = itemSchema.Build();
+                x.Nullable = nullable;
+            });
+            return builder;
+        }
+
+        // Handle generic List<T> and IList<T> types
+        if (type.IsGenericType &&
+            (type.GetGenericTypeDefinition() == typeof(List<>) ||
+             type.GetGenericTypeDefinition() == typeof(IList<>) ||
+             type.GetGenericTypeDefinition() == typeof(ICollection<>) ||
+             type.GetGenericTypeDefinition() == typeof(IEnumerable<>)))
+        {
+            var elementType = type.GetGenericArguments()[0];
+            var itemSchema = new ObjectBuilder<V1JSONSchemaProps>();
+            itemSchema.OfType(elementType);
+
+            builder.Add(x =>
+            {
+                x.Type = "array";
+                x.Items = itemSchema.Build();
+                x.Nullable = nullable;
+            });
+            return builder;
+        }
+
         return type.BaseType?.FullName switch
         {
             "System.Object" => builder.ObjectType(type),

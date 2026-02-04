@@ -6,7 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOperator(x =>
 {
-    x.LeaderElectionOptions.Enabled = false;
+    x.LeaderElectionOptions.ElectionType = k8s.Operator.Leader.LeaderElectionType.Never;
 
     x.OperatorConfiguration.OperatorName = "k8s-frontman";
     x.OperatorConfiguration.Namespace = "default";

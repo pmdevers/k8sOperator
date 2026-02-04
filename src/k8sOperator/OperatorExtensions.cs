@@ -38,6 +38,7 @@ public static class OperatorExtensions
             services.TryAddSingleton<ControllerDatasource>();
             services.TryAddSingleton<IInformerFactory, InformerFactory>();
             services.TryAddTransient(typeof(IWorkQueue<>), typeof(WorkQueue<>));
+            services.TryAddTransient(typeof(IInformer<>), typeof(InformerFactory<>));
 
             services.TryAddSingleton<IKubernetes>((_) =>
             {
@@ -91,7 +92,12 @@ public static class OperatorExtensions
             services.TryAddSingleton(sp =>
             {
                 var o = sp.GetRequiredService<LeaderElectionOptions>();
-                var type = o.Enabled ? typeof(LeaderElectionService) : typeof(NoopLeaderElectionService);
+                var type = o.ElectionType switch
+                {
+                    LeaderElectionType.Lease => typeof(LeaderElectionService),
+                    LeaderElectionType.Never => typeof(NeverLeaderElectionService),
+                    _ => typeof(NoopLeaderElectionService)
+                };
                 return (ILeaderElectionService)ActivatorUtilities.CreateInstance(sp, type);
             });
 

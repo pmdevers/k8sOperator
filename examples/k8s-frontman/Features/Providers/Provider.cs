@@ -5,7 +5,7 @@ using k8s.Operator.Models;
 
 namespace k8s.Frontman.Features.Providers;
 
-[KubernetesEntity(Group = "frontman.io", ApiVersion = "v1alpha", Kind = "Provider", PluralName = "providers")]
+[KubernetesEntity(Group = "frontman.io", ApiVersion = "v1alpha1", Kind = "Provider", PluralName = "providers")]
 public class Provider : CustomResource<Provider.Specs, Provider.State>
 {
     public class Specs
@@ -16,7 +16,7 @@ public class Provider : CustomResource<Provider.Specs, Provider.State>
 
     public class State
     {
-        public int NumberOfReleases { get; set; }
-        public string[] Versions { get; set; }
+        public int NumberOfReleases { get; set; } = 0;
+        public string[] Versions { get; set; } = [];
     }
 }

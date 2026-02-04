@@ -14,32 +14,20 @@ public class OperatorService(
 {
     private readonly List<Task> _controllerTasks = [];
     private CancellationTokenSource? _stoppingCts;
+    private Task? _backgroundTask;
 
 
-    public async Task StartAsync(CancellationToken cancellationToken)
+    public Task StartAsync(CancellationToken cancellationToken)
     {
-        _ = Task.Run(() =>
-            leaderElectionService.StartAsync(cancellationToken), cancellationToken);
+        _stoppingCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
-        while (!cancellationToken.IsCancellationRequested)
-        {
-            logger.LogInformation("Waiting for leadership...");
+        // Start the operator logic in a background task
+        _backgroundTask = Task.Run(async () => await RunOperatorLoopAsync(_stoppingCts.Token), cancellationToken);
 
-            await leaderElectionService.WaitForLeadershipAsync(cancellationToken);
+        logger.LogInformation("Operator Service started in background");
 
-            logger.LogInformation("Leadership acquired");
-
-            using var watcherCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-
-            await RunAsync(watcherCts.Token);
-
-            await leaderElectionService.WaitForLeadershipLostAsync(cancellationToken);
-
-            logger.LogInformation("Leadership lost, stopping controllers...");
-
-            // Leadership lost or stopping, cancel watchers
-            await watcherCts.CancelAsync();
-        }
+        // Return immediately so the web API can start
+        return Task.CompletedTask;
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
@@ -48,6 +36,19 @@ public class OperatorService(
 
         if (_stoppingCts != null)
             await _stoppingCts.CancelAsync();
+
+        // Wait for the background task to complete
+        if (_backgroundTask != null)
+        {
+            try
+            {
+                await _backgroundTask;
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected when cancellation is requested
+            }
+        }
 
         if (_controllerTasks.Count > 0)
         {
@@ -59,11 +60,49 @@ public class OperatorService(
         logger.LogInformation("Operator Service stopped");
     }
 
-    private async Task RunAsync(CancellationToken cancellationToken)
+    private async Task RunOperatorLoopAsync(CancellationToken cancellationToken)
     {
-        _stoppingCts = new CancellationTokenSource();
+        _ = Task.Run(() =>
+            leaderElectionService.StartAsync(cancellationToken), cancellationToken);
 
-        logger.LogInformation("Starting Operator Service...");
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            try
+            {
+                logger.LogInformation("Waiting for leadership...");
+
+                await leaderElectionService.WaitForLeadershipAsync(cancellationToken);
+
+                logger.LogInformation("Leadership acquired");
+
+                using var watcherCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+
+                await RunControllersAsync(watcherCts.Token);
+
+                await leaderElectionService.WaitForLeadershipLostAsync(cancellationToken);
+
+                logger.LogInformation("Leadership lost, stopping controllers...");
+
+                // Leadership lost or stopping, cancel watchers
+                await watcherCts.CancelAsync();
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected when cancellation is requested
+                break;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error in operator loop");
+                // Wait a bit before retrying to avoid tight loop on persistent errors
+                await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
+            }
+        }
+    }
+
+    private async Task RunControllersAsync(CancellationToken cancellationToken)
+    {
+        logger.LogInformation("Starting controllers...");
 
         // Build all controllers first (this registers informers)
         var controllers = controllerDatasource.GetControllers().ToList();
@@ -78,9 +117,10 @@ public class OperatorService(
         logger.LogInformation("Cache synced successfully");
 
         // Finally start the controllers
+        _controllerTasks.Clear();
         foreach (var controller in controllers)
         {
-            var task = controller.RunAsync(_stoppingCts.Token);
+            var task = controller.RunAsync(cancellationToken);
             _controllerTasks.Add(task);
             logger.LogInformation("Started controller: {ControllerType}", controller.GetType().GetFriendlyName());
         }

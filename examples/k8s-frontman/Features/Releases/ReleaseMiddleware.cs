@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.StaticFiles;
 
 namespace k8s.Frontman.Features.Releases;
 
-public class ReleaseMiddleware(RequestDelegate next, 
+public class ReleaseMiddleware(RequestDelegate next,
     IInformer<Release> releases,
     IInformer<Provider> providers)
 {
@@ -15,7 +15,7 @@ public class ReleaseMiddleware(RequestDelegate next,
             .ToList();
 
         var releaseName = segments.FirstOrDefault() ?? string.Empty;
-        
+
         var release = releases.List()
             .FirstOrDefault(x => x.Spec.Url == releaseName);
 
@@ -25,7 +25,7 @@ public class ReleaseMiddleware(RequestDelegate next,
             return;
         }
 
-        var newPath = string.Join('/', ["", release.Spec.Version, .. segments.Skip(1)]);
+        var newPath = string.Join('/', ["", release.Status?.CurrentVersion, .. segments.Skip(1)]);
 
         var providerName = release.Spec.Provider;
         var provider = providers.Get(providerName, release.Metadata.NamespaceProperty);
@@ -44,11 +44,28 @@ public class ReleaseMiddleware(RequestDelegate next,
 
         var fileInfo = fileProvider.GetFileInfo(newPath);
 
-        if (!fileInfo.Exists)
+        // If path is a directory or doesn't exist, try index.html
+        if (!fileInfo.Exists || fileInfo.IsDirectory)
         {
-            context.Response.StatusCode = StatusCodes.Status404NotFound;
-            await context.Response.WriteAsync("File not found");
-            return;
+            var indexPath = newPath.TrimEnd('/') + "/index.html";
+            var indexFileInfo = fileProvider.GetFileInfo(indexPath);
+
+            if (indexFileInfo.Exists && !indexFileInfo.IsDirectory)
+            {
+                fileInfo = indexFileInfo;
+            }
+            else if (!fileInfo.Exists)
+            {
+                context.Response.StatusCode = StatusCodes.Status404NotFound;
+                await context.Response.WriteAsync("File not found");
+                return;
+            }
+            else
+            {
+                context.Response.StatusCode = StatusCodes.Status404NotFound;
+                await context.Response.WriteAsync("File not found");
+                return;
+            }
         }
 
         var contentTypeProvider = new FileExtensionContentTypeProvider();
