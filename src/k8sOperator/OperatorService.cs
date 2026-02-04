@@ -1,4 +1,5 @@
-﻿using k8s.Operator.Helpers;
+﻿using k8s.Operator.Controller;
+using k8s.Operator.Helpers;
 using k8s.Operator.Informer;
 using k8s.Operator.Leader;
 using Microsoft.Extensions.Hosting;
@@ -62,6 +63,17 @@ public class OperatorService(
 
     private async Task RunOperatorLoopAsync(CancellationToken cancellationToken)
     {
+        // Build all controllers first (this registers informers)
+        var controllers = controllerDatasource.GetControllers().ToList();
+        logger.LogInformation("Built {Count} controller(s)", controllers.Count);
+
+        // Start informers immediately, regardless of leadership status
+        await informerFactory.StartAsync(cancellationToken);
+        logger.LogInformation("Informer factory started");
+
+        await informerFactory.WaitForCacheSyncAsync(cancellationToken);
+        logger.LogInformation("Cache synced successfully");
+
         _ = Task.Run(() =>
             leaderElectionService.StartAsync(cancellationToken), cancellationToken);
 
@@ -77,7 +89,7 @@ public class OperatorService(
 
                 using var watcherCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
-                await RunControllersAsync(watcherCts.Token);
+                await RunControllersAsync(controllers, watcherCts.Token);
 
                 await leaderElectionService.WaitForLeadershipLostAsync(cancellationToken);
 
@@ -100,29 +112,27 @@ public class OperatorService(
         }
     }
 
-    private async Task RunControllersAsync(CancellationToken cancellationToken)
+    private async Task RunControllersAsync(List<IController> controllers, CancellationToken cancellationToken)
     {
         logger.LogInformation("Starting controllers...");
 
-        // Build all controllers first (this registers informers)
-        var controllers = controllerDatasource.GetControllers().ToList();
-
-        logger.LogInformation("Built {Count} controller(s)", controllers.Count);
-
-        // Now start the informers
-        await informerFactory.StartAsync(cancellationToken);
-        logger.LogInformation("Informer factory started");
-
-        await informerFactory.WaitForCacheSyncAsync(cancellationToken);
-        logger.LogInformation("Cache synced successfully");
-
-        // Finally start the controllers
+        // Start the controllers (informers are already running)
         _controllerTasks.Clear();
         foreach (var controller in controllers)
         {
             var task = controller.RunAsync(cancellationToken);
             _controllerTasks.Add(task);
             logger.LogInformation("Started controller: {ControllerType}", controller.GetType().GetFriendlyName());
+        }
+
+        // Wait for cancellation (leadership loss or shutdown)
+        try
+        {
+            await Task.Delay(Timeout.Infinite, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected when leadership is lost or stopping
         }
     }
 }
