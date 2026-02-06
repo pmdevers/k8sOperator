@@ -29,6 +29,8 @@ public class GenerateDockerfileTask : Task
     [Required]
     public string ContainerTag { get; set; } = string.Empty;
 
+    public string UseSingleFilePublish { get; set; } = "false";
+
     public override bool Execute()
     {
         try
@@ -39,8 +41,13 @@ public class GenerateDockerfileTask : Task
             // Extract .NET version from TargetFramework
             var dotnetVersion = ExtractDotNetVersion(TargetFramework);
 
+            // Determine which template to use
+            var templateName = UseSingleFilePublish.Equals("true", StringComparison.OrdinalIgnoreCase)
+                ? "Dockerfile.singlefile.template"
+                : "Dockerfile.template";
+
             // Read templates from embedded resources
-            var dockerfileContent = Reader.ReadEmbeddedResource("Dockerfile.template");
+            var dockerfileContent = Reader.ReadEmbeddedResource(templateName);
             var dockerignoreContent = Reader.ReadEmbeddedResource(".dockerignore.template");
 
             // Replace placeholders
@@ -51,22 +58,20 @@ public class GenerateDockerfileTask : Task
             if (!File.Exists(dockerfilePath))
             {
                 File.WriteAllText(dockerfilePath, dockerfileContent);
-
                 Log.LogMessage(MessageImportance.High, $"Generated Dockerfile at: {dockerfilePath}");
-
             }
 
             if (!File.Exists(dockerignorePath))
             {
                 File.WriteAllText(dockerignorePath, dockerignoreContent);
-
                 Log.LogMessage(MessageImportance.High, $"Generated .dockerignore at: {dockerignorePath}");
             }
 
             // Log success
             Log.LogMessage(MessageImportance.High, $"Operator: {OperatorName}");
             Log.LogMessage(MessageImportance.High, $"  .NET Version: {dotnetVersion}");
-            Log.LogMessage(MessageImportance.High, $"   Image: {ContainerRegistry}/{ContainerRepository}:{ContainerTag}");
+            Log.LogMessage(MessageImportance.High, $"  Single-file: {UseSingleFilePublish}");
+            Log.LogMessage(MessageImportance.High, $"  Image: {ContainerRegistry}/{ContainerRepository}:{ContainerTag}");
             Log.LogMessage(MessageImportance.High, "");
             Log.LogMessage(MessageImportance.High, "To build the image:");
             Log.LogMessage(MessageImportance.High, $"  docker build -t {ContainerRegistry}/{ContainerRepository}:{ContainerTag} .");
@@ -96,6 +101,4 @@ public class GenerateDockerfileTask : Task
         // Fallback
         return "10.0";
     }
-
-
 }

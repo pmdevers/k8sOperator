@@ -1,17 +1,17 @@
 # Build stage
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:{DOTNET_VERSION} AS build
 ARG TARGETARCH
 WORKDIR /src
 
 # Copy project file and restore dependencies
-COPY ["k8s-frontman.csproj", "./"]
+COPY ["{PROJECT_NAME}.csproj", "./"]
 RUN dotnet restore -r linux-$TARGETARCH
 
 # Copy source code
 COPY . .
 
 # Publish as single-file executable with optimizations
-RUN dotnet publish "k8s-frontman.csproj" -c Release -r linux-$TARGETARCH \
+RUN dotnet publish "{PROJECT_NAME}.csproj" -c Release -r linux-$TARGETARCH \
     --no-restore \
     --self-contained true \
     -p:PublishSingleFile=true \
@@ -23,11 +23,11 @@ RUN dotnet publish "k8s-frontman.csproj" -c Release -r linux-$TARGETARCH \
     -o /app/publish
 
 # Runtime stage - use smaller runtime-deps image for self-contained apps
-FROM mcr.microsoft.com/dotnet/runtime-deps:10.0-noble-chiseled AS final
+FROM mcr.microsoft.com/dotnet/runtime-deps:{DOTNET_VERSION}-noble-chiseled AS final
 WORKDIR /app
 
 # OCI annotations / labels
-LABEL org.opencontainers.image.title="k8s-frontman" \
+LABEL org.opencontainers.image.title="{PROJECT_NAME}" \
       org.opencontainers.image.description="Kubernetes Operator built with k8sOperator" \
       org.opencontainers.image.vendor="k8sOperator" \
       org.opencontainers.image.source="https://github.com/pmdevers/k8sOperator"
@@ -36,10 +36,10 @@ LABEL org.opencontainers.image.title="k8s-frontman" \
 USER $APP_UID
 
 # Copy published executable
-COPY --from=build --chown=$APP_UID:$APP_UID /app/publish/k8s-frontman .
+COPY --from=build --chown=$APP_UID:$APP_UID /app/publish/{PROJECT_NAME} .
 
 # Set ownership
-RUN chmod +x k8s-frontman
+RUN chmod +x {PROJECT_NAME}
 
 # Set environment variables
 ENV ASPNETCORE_ENVIRONMENT=Production \
@@ -51,12 +51,12 @@ ENV ASPNETCORE_ENVIRONMENT=Production \
 
 # Health check (operators typically expose metrics on :8080)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-  CMD ["./k8s-frontman", "health"] || exit 1
+  CMD ["./{PROJECT_NAME}", "health"] || exit 1
 
 
 # Expose metrics port (standard for Kubernetes operators)
 EXPOSE 8080
 
 # Entrypoint
-ENTRYPOINT ["./k8s-frontman"]
+ENTRYPOINT ["./{PROJECT_NAME}"]
 CMD ["operator"]

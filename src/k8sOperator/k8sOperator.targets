@@ -1,13 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project>
 	<!-- Load MSBuild task from BuildTasks assembly -->
-	<!-- For project references, use relative path to the built DLL. For NuGet packages, use the packaged path -->
 	<PropertyGroup>
-		<_BuildTasksPath Condition="'$(_BuildTasksPath)' == '' AND Exists('$(MSBuildThisFileDirectory)..\k8sOperator.BuildTasks\bin\$(Configuration)\netstandard2.0\k8sOperator.BuildTasks.dll')">$(MSBuildThisFileDirectory)..\k8sOperator.BuildTasks\bin\$(Configuration)\netstandard2.0\k8sOperator.BuildTasks.dll</_BuildTasksPath>
-		<_BuildTasksPath Condition="'$(_BuildTasksPath)' == ''">$(MSBuildThisFileDirectory)..\build\netstandard2.0\k8sOperator.BuildTasks.dll</_BuildTasksPath>
+		<!-- Original source path -->
+		<_BuildTasksSourcePath Condition="'$(_BuildTasksSourcePath)' == '' AND Exists('$(MSBuildThisFileDirectory)..\k8sOperator.BuildTasks\bin\$(Configuration)\netstandard2.0\k8sOperator.BuildTasks.dll')">$(MSBuildThisFileDirectory)..\k8sOperator.BuildTasks\bin\$(Configuration)\netstandard2.0\k8sOperator.BuildTasks.dll</_BuildTasksSourcePath>
+		<_BuildTasksSourcePath Condition="'$(_BuildTasksSourcePath)' == ''">$(MSBuildThisFileDirectory)..\build\netstandard2.0\k8sOperator.BuildTasks.dll</_BuildTasksSourcePath>
+		
+		<!-- Shadow copy location (prevents locking source) -->
+		<_BuildTasksShadowPath>$(MSBuildProjectExtensionsPath)k8sOperator.BuildTasks\k8sOperator.BuildTasks.dll</_BuildTasksShadowPath>
 	</PropertyGroup>
-	<UsingTask TaskName="k8sOperator.BuildTasks.GenerateDockerfileTask" AssemblyFile="$(_BuildTasksPath)" />
-	<UsingTask TaskName="k8sOperator.BuildTasks.GenerateLaunchSettingsTask" AssemblyFile="$(_BuildTasksPath)" />
+
+	<!-- Copy to shadow location before loading -->
+	<Target Name="ShadowCopyBuildTasks" BeforeTargets="BeforeResolveReferences;BeforeBuild">
+		<MakeDir Directories="$(MSBuildProjectExtensionsPath)k8sOperator.BuildTasks" />
+		<Copy SourceFiles="$(_BuildTasksSourcePath)" 
+		      DestinationFiles="$(_BuildTasksShadowPath)" 
+		      SkipUnchangedFiles="true"
+		      OverwriteReadOnlyFiles="true"
+		      Condition="Exists('$(_BuildTasksSourcePath)')" />
+	</Target>
+
+	<!-- Load from shadow copy -->
+	<UsingTask TaskName="k8sOperator.BuildTasks.GenerateDockerfileTask" AssemblyFile="$(_BuildTasksShadowPath)" />
+	<UsingTask TaskName="k8sOperator.BuildTasks.GenerateLaunchSettingsTask" AssemblyFile="$(_BuildTasksShadowPath)" />
 
 	<!-- Diagnostic message to confirm target file is loaded -->
 	<Target Name="OperatorTargetsLoaded" BeforeTargets="BeforeBuild">
@@ -21,6 +36,7 @@
 		<Message Importance="high" Text="k8sOperator: ContainerFamily=$(ContainerFamily)" />
 		
 		<Message Importance="high" Text="k8sOperator: CreateOperatorLaunchSettings=$(CreateOperatorLaunchSettings)" />
+		<Message Importance="high" Text="k8sOperator: PublishSingleFileExecutable=$(PublishSingleFileExecutable)" />
 	</Target>
 
 	<PropertyGroup>
@@ -37,6 +53,19 @@
 		
 		<!-- Allow users to opt-in to generating Dockerfile -->
 		<GenerateOperatorDockerfile Condition=" '$(GenerateOperatorDockerfile)' == '' ">false</GenerateOperatorDockerfile>
+
+		<!-- Single-file executable configuration -->
+		<PublishSingleFileExecutable Condition=" '$(PublishSingleFileExecutable)' == '' ">false</PublishSingleFileExecutable>
+		
+		<!-- Configure single-file publishing when enabled -->
+		<PublishSingleFile Condition=" '$(PublishSingleFileExecutable)' == 'true' ">true</PublishSingleFile>
+		<SelfContained Condition=" '$(PublishSingleFileExecutable)' == 'true' AND '$(SelfContained)' == '' ">true</SelfContained>
+		<PublishTrimmed Condition=" '$(PublishSingleFileExecutable)' == 'true' AND '$(PublishTrimmed)' == '' ">true</PublishTrimmed>
+		<EnableCompressionInSingleFile Condition=" '$(PublishSingleFileExecutable)' == 'true' ">true</EnableCompressionInSingleFile>
+		<IncludeNativeLibrariesForSelfContained Condition=" '$(PublishSingleFileExecutable)' == 'true' ">true</IncludeNativeLibrariesForSelfContained>
+		
+		<!-- Default RuntimeIdentifier for Docker (can be overridden) -->
+		<RuntimeIdentifier Condition=" '$(PublishSingleFileExecutable)' == 'true' AND '$(RuntimeIdentifier)' == '' ">linux-x64</RuntimeIdentifier>
 	</PropertyGroup>
 	
 	<ItemGroup>
@@ -96,7 +125,30 @@
 			OperatorName="$(OperatorName)"
 			ContainerRegistry="$(ContainerRegistry)"
 			ContainerRepository="$(_FullContainerRepository)"
-			ContainerTag="$(_FullContainerTag)" />
+			ContainerTag="$(_FullContainerTag)"
+			UseSingleFilePublish="$(PublishSingleFileExecutable)" />
+	</Target>
+
+	<!-- Helper target to publish for multiple platforms -->
+	<Target Name="PublishAllPlatforms">
+		<PropertyGroup>
+			<_OriginalRuntimeIdentifier>$(RuntimeIdentifier)</_OriginalRuntimeIdentifier>
+		</PropertyGroup>
+		
+		<Message Importance="high" Text="Publishing for Windows (win-x64)..." />
+		<MSBuild Projects="$(MSBuildProjectFile)" 
+		         Targets="Publish" 
+		         Properties="RuntimeIdentifier=win-x64;Configuration=$(Configuration)" />
+		
+		<Message Importance="high" Text="Publishing for Linux (linux-x64)..." />
+		<MSBuild Projects="$(MSBuildProjectFile)" 
+		         Targets="Publish" 
+		         Properties="RuntimeIdentifier=linux-x64;Configuration=$(Configuration)" />
+		
+		<Message Importance="high" Text="" />
+		<Message Importance="high" Text="Multi-platform publish completed:" />
+		<Message Importance="high" Text="  Windows: $(MSBuildProjectDirectory)\bin\$(Configuration)\$(TargetFramework)\win-x64\publish\" />
+		<Message Importance="high" Text="  Linux:   $(MSBuildProjectDirectory)\bin\$(Configuration)\$(TargetFramework)\linux-x64\publish\" />
 	</Target>
 
 </Project>
