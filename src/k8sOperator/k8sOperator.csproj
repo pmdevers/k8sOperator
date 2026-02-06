@@ -13,4 +13,40 @@
     <PackageReference Include="Microsoft.Extensions.Logging" />
   </ItemGroup>
 
+  <!-- Pack Operator.targets for NuGet consumers (both direct and transitive) -->
+  <ItemGroup>
+    <None Include="k8sOperator.targets" Pack="true" PackagePath="build\$(PackageId).targets" />
+    <None Include="k8sOperator.targets" Pack="true" PackagePath="buildTransitive\$(PackageId).targets" />
+  </ItemGroup>
+
+  <!-- Reference BuildTasks project -->
+  <ItemGroup>
+    <ProjectReference Include="..\k8sOperator.BuildTasks\k8sOperator.BuildTasks.csproj" ReferenceOutputAssembly="false">
+      <!-- Ensure build outputs are available for packing -->
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>none</IncludeAssets>
+    </ProjectReference>
+  </ItemGroup>
+
+  <!-- Pack BuildTasks assembly and all dependencies -->
+  <!-- This target runs after BuildTasks is built but before creating the package -->
+  <Target Name="IncludeBuildTasksInPackage" BeforeTargets="_GetPackageFiles" DependsOnTargets="ResolveProjectReferences">
+    <ItemGroup>
+      <!-- Get all DLL files from the BuildTasks output directory -->
+      <_BuildTasksDlls Include="..\k8sOperator.BuildTasks\bin\$(Configuration)\netstandard2.0\*.dll" />
+    </ItemGroup>
+
+    <!-- Add each DLL to the package for both build and buildTransitive paths -->
+    <ItemGroup>
+      <None Include="@(_BuildTasksDlls)">
+        <Pack>true</Pack>
+        <PackagePath>build\netstandard2.0\%(Filename)%(Extension)</PackagePath>
+      </None>
+      <None Include="@(_BuildTasksDlls)">
+        <Pack>true</Pack>
+        <PackagePath>buildTransitive\netstandard2.0\%(Filename)%(Extension)</PackagePath>
+      </None>
+    </ItemGroup>
+  </Target>
+
 </Project>

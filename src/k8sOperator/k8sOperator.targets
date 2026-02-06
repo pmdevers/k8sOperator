@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+	<!-- Load MSBuild task from BuildTasks assembly -->
+	<!-- For project references, use relative path to the built DLL. For NuGet packages, use the packaged path -->
+	<PropertyGroup>
+		<_BuildTasksPath Condition="'$(_BuildTasksPath)' == '' AND Exists('$(MSBuildThisFileDirectory)..\k8sOperator.BuildTasks\bin\$(Configuration)\netstandard2.0\k8sOperator.BuildTasks.dll')">$(MSBuildThisFileDirectory)..\k8sOperator.BuildTasks\bin\$(Configuration)\netstandard2.0\k8sOperator.BuildTasks.dll</_BuildTasksPath>
+		<_BuildTasksPath Condition="'$(_BuildTasksPath)' == ''">$(MSBuildThisFileDirectory)..\build\netstandard2.0\k8sOperator.BuildTasks.dll</_BuildTasksPath>
+	</PropertyGroup>
+	<UsingTask TaskName="k8sOperator.BuildTasks.GenerateDockerfileTask" AssemblyFile="$(_BuildTasksPath)" />
+	<UsingTask TaskName="k8sOperator.BuildTasks.GenerateLaunchSettingsTask" AssemblyFile="$(_BuildTasksPath)" />
+
+	<!-- Diagnostic message to confirm target file is loaded -->
+	<Target Name="OperatorTargetsLoaded" BeforeTargets="BeforeBuild">
+		<Message Importance="high" Text="k8sOperator: Operator.targets has been loaded successfully" />
+		<Message Importance="high" Text="k8sOperator: OperatorName=$(OperatorName)" />
+		<Message Importance="high" Text="k8sOperator: OperatorNamespace=$(OperatorNamespace)" />
+		<Message Importance="high" Text="k8sOperator: ContainerRegistry=$(ContainerRegistry)" />
+		<Message Importance="high" Text="k8sOperator: ContainerRepository=$(ContainerRepository)" />
+		<Message Importance="high" Text="k8sOperator: Version=$(Version)" />
+		<Message Importance="high" Text="k8sOperator: ContainerImageTag=$(ContainerImageTag)" />
+		<Message Importance="high" Text="k8sOperator: ContainerFamily=$(ContainerFamily)" />
+		
+		<Message Importance="high" Text="k8sOperator: CreateOperatorLaunchSettings=$(CreateOperatorLaunchSettings)" />
+	</Target>
+
+	<PropertyGroup>
+		<OperatorName Condition=" '$(OperatorName)' == '' ">$(MSBuildProjectName.Replace(" ", "_").ToLower())</OperatorName>
+		<OperatorNamespace Condition=" '$(OperatorNamespace)' == '' ">$(MSBuildProjectName.Replace(" ", "_").ToLower())-system</OperatorNamespace>
+
+		<ContainerRegistry Condition=" '$(ContainerRegistry)' == '' ">ghcr.io</ContainerRegistry>
+		<ContainerRepository Condition=" '$(ContainerRepository)' == '' ">$(Company)/$(OperatorName)</ContainerRepository>
+		<ContainerImageTag Condition=" '$(ContainerImageTag)' == '' ">$(Version)</ContainerImageTag>
+		<ContainerFamily Condition=" '$(ContainerFamily)' == '' "></ContainerFamily>
+		
+		<!-- Allow users to opt-in to including launch settings -->
+		<CreateOperatorLaunchSettings Condition=" '$(CreateOperatorLaunchSettings)' == '' ">false</CreateOperatorLaunchSettings>
+		
+		<!-- Allow users to opt-in to generating Dockerfile -->
+		<GenerateOperatorDockerfile Condition=" '$(GenerateOperatorDockerfile)' == '' ">false</GenerateOperatorDockerfile>
+	</PropertyGroup>
+	
+	<ItemGroup>
+		<AssemblyAttribute Include="k8s.Operator.Metadata.OperatorNameAttribute">
+			<_Parameter1>$(OperatorName)</_Parameter1>
+		</AssemblyAttribute>
+		<AssemblyAttribute Include="k8s.Operator.Metadata.NamespaceAttribute">
+			<_Parameter1>$(OperatorNamespace)</_Parameter1>
+		</AssemblyAttribute>
+	</ItemGroup>
+	
+	<!-- Add DockerImageAttribute dynamically to ensure Version is available -->
+	<Target Name="AddDockerImageAttribute" BeforeTargets="GetAssemblyAttributes;CoreCompile">
+		<PropertyGroup>
+			<_ContainerImageTagValue Condition=" '$(ContainerImageTag)' == '' ">$(Version)</_ContainerImageTagValue>
+			<_ContainerImageTagValue Condition=" '$(ContainerImageTag)' != '' ">$(ContainerImageTag)</_ContainerImageTagValue>
+			
+			<_ContainerRepositorySuffix Condition=" '$(ContainerRepository)' == '' ">$(Company)/</_ContainerRepositorySuffix>
+			<_ContainerRepositorySuffix Condition=" '$(ContainerRepository)' != '' ">$(ContainerRepository)/</_ContainerRepositorySuffix>
+
+			<!-- Add hyphen before ContainerFamily if it's not empty -->
+			<_ContainerFamilySuffix Condition=" '$(ContainerFamily)' != '' ">-$(ContainerFamily)</_ContainerFamilySuffix>
+			<_ContainerFamilySuffix Condition=" '$(ContainerFamily)' == '' "></_ContainerFamilySuffix>
+			
+			<_FullContainerTag>$(_ContainerImageTagValue)$(_ContainerFamilySuffix)</_FullContainerTag>
+			<_FullContainerRepository>$(_ContainerRepositorySuffix)$(OperatorName)</_FullContainerRepository>
+		</PropertyGroup>
+		<ItemGroup>
+			<AssemblyAttribute Include="k8s.Operator.Metadata.DockerImageAttribute">
+				<_Parameter1>$(ContainerRegistry)</_Parameter1>
+				<_Parameter2>$(_FullContainerRepository)</_Parameter2>
+				<_Parameter3>$(_FullContainerTag)</_Parameter3>
+			</AssemblyAttribute>
+		</ItemGroup>
+	</Target>
+
+	<!-- Create Properties folder if it doesn't exist -->
+	<Target Name="EnsurePropertiesFolder" BeforeTargets="CreateOperatorLaunchSettings" Condition=" '$(CreateOperatorLaunchSettings)' == 'true' ">
+		<MakeDir Directories="$(MSBuildProjectDirectory)\Properties" Condition="!Exists('$(MSBuildProjectDirectory)\Properties')" />
+	</Target>
+
+	<!-- Generate launchSettings.json if it doesn't exist -->
+	<Target Name="CreateOperatorLaunchSettings" AfterTargets="Build" Condition=" '$(CreateOperatorLaunchSettings)' == 'true' AND !Exists('$(MSBuildProjectDirectory)\Properties\launchSettings.json') ">
+		<GenerateLaunchSettingsTask
+			ProjectDirectory="$(MSBuildProjectDirectory)" />
+	</Target>
+
+	<!-- Generate Dockerfile if it doesn't exist -->
+	<Target Name="GenerateDockerfile" 
+	        DependsOnTargets="AddDockerImageAttribute" 
+	        BeforeTargets="Build" 
+	        Condition=" '$(GenerateOperatorDockerfile)' == 'true' AND !Exists('$(MSBuildProjectDirectory)\Dockerfile') ">
+		<GenerateDockerfileTask
+			ProjectDirectory="$(MSBuildProjectDirectory)"
+			ProjectName="$(MSBuildProjectName)"
+			TargetFramework="$(TargetFramework)"
+			OperatorName="$(OperatorName)"
+			ContainerRegistry="$(ContainerRegistry)"
+			ContainerRepository="$(_FullContainerRepository)"
+			ContainerTag="$(_FullContainerTag)" />
+	</Target>
+
+</Project>

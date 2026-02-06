@@ -4,9 +4,9 @@ namespace k8s.Frontman.Features.Providers.Azure;
 
 public class AzureBlobFileProviderOptions : IFileProviderFactory
 {
-    public string AccountName { get; set; }
-    public string AccountKey { get; set; }
-    public string ContainerName { get; set; }
+    public string AccountName { get; set; } = string.Empty;
+    public string AccountKey { get; set; } = string.Empty;
+    public string ContainerName { get; set; } = string.Empty;
     public string? Root { get; set; }
 
     public IFileProvider Create()
@@ -17,5 +17,5 @@ public class AzureBlobFileProviderOptions : IFileProviderFactory
     public string GetConnectionString()
         => $"DefaultEndpointsProtocol=https;AccountName={AccountName};AccountKey={AccountKey};EndpointSuffix=core.windows.net";
 
-    
+
 }

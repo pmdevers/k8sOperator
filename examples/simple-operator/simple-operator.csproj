@@ -5,10 +5,18 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>simple_operator</RootNamespace>
+
+    <CreateOperatorLaunchSettings>true</CreateOperatorLaunchSettings>
+    <GenerateOperatorDockerfile>true</GenerateOperatorDockerfile>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\k8sOperator\k8sOperator.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
+
 </Project>
+

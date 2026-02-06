@@ -1,0 +1,6 @@
+<Project>
+  <!-- Automatically import k8sOperator build tasks for all example projects -->
+  <!-- This ensures build tasks run during development with project references -->
+  <Import Project="..\src\k8sOperator\k8sOperator.targets" 
+          Condition="Exists('..\src\k8sOperator\k8sOperator.targets')" />
+</Project>

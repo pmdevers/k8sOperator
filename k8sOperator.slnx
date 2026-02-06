@@ -1,9 +1,11 @@
 <Solution>
   <Folder Name="/examples/">
+    <File Path="examples/Directory.Build.targets" />
     <Project Path="examples/k8s-frontman/k8s-frontman.csproj" Id="4c53c977-5392-4002-804c-3f60a8c88589" />
     <Project Path="examples/simple-operator/simple-operator.csproj" Id="388c9880-01c3-4c9b-a75d-1c52821255a9" />
   </Folder>
   <Folder Name="/src/">
+    <Project Path="src/k8sOperator.BuildTasks/k8sOperator.BuildTasks.csproj" Id="2f253022-d64e-41f2-b70d-e57d873e70cb" />
     <Project Path="src/k8sOperator/k8sOperator.csproj" Id="d84c3fff-673a-4b05-9c92-950ffe42fdd4" />
   </Folder>
   <Folder Name="/test/">
