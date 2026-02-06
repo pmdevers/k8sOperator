@@ -16,6 +16,13 @@ public static class ReleaseReconciler
             return;
         }
 
+        await context.Update<Release>()
+            .AddLabel("managed-by", "simple-operator")
+            .AddLabel("processed", "true")
+            .AddLabel("frontman.io/release-provider", newVersion.Spec.Provider)
+            .AddAnnotation("last-reconcile", DateTime.UtcNow.ToString("o"))
+            .ApplyAsync();
+
         var current = infromer.Get(newVersion.Metadata.Name, newVersion.Metadata.NamespaceProperty);
         var provider = providers.Get(newVersion.Spec.Provider, newVersion.Metadata.NamespaceProperty);
 
@@ -40,19 +47,21 @@ public static class ReleaseReconciler
                 x.Status.Message = $"Version '{newVersion.Spec.Version}' not found.";
             }).ApplyAsync();
 
+            await context.Queue.Requeue(context.ResourceKey, TimeSpan.FromSeconds(30), context.CancellationToken);
+
             return;
         }
-
-        await context.Update<Release>()
-            .AddLabel("frontman.io/release-provider", newVersion.Spec.Provider)
-            .ApplyAsync();
-
 
         await context.Update<Release>()
             .WithStatus(x =>
             {
                 x.Status = x.Status ?? new();
-                x.Status.PreviousVersion = current?.Status?.CurrentVersion ?? string.Empty;
+
+                if (current?.Status?.CurrentVersion != newVersion.Spec.Version)
+                {
+                    x.Status.PreviousVersion = current?.Status?.CurrentVersion ?? string.Empty;
+                }
+
                 x.Status.CurrentVersion = newVersion.Spec.Version;
                 x.Status.Message = string.Empty;
             }).ApplyAsync();

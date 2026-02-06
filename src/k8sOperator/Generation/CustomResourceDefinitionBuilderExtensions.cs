@@ -1,4 +1,5 @@
 ﻿using k8s.Models;
+using k8s.Operator.Generation.Attributes;
 using System.Reflection;
 
 namespace k8s.Operator.Generation;
@@ -247,7 +248,7 @@ public static partial class CustomResourceDefinitionBuilderExtensions
     /// <param name="nullable"></param>
     /// <returns>The configured builder.</returns>
     /// <exception cref="InvalidOperationException">Thrown when the provided type is not valid.</exception>
-    public static TBuilder OfType<TBuilder>(this TBuilder builder, Type type, bool? nullable = false)
+    public static TBuilder OfType<TBuilder>(this TBuilder builder, Type type, bool? nullable = false, string? pattern = null, string? defaultValue = null)
         where TBuilder : IObjectBuilder<V1JSONSchemaProps>
     {
         if (type.FullName == "System.String")
@@ -256,6 +257,12 @@ public static partial class CustomResourceDefinitionBuilderExtensions
             {
                 x.Type = "string";
                 x.Nullable = nullable;
+
+                if (pattern is not null)
+                    x.Pattern = pattern;
+
+                if (defaultValue is not null)
+                    x.DefaultProperty = defaultValue;
             });
             return builder;
         }
@@ -440,7 +447,10 @@ public static partial class CustomResourceDefinitionBuilderExtensions
                 builder.IsNullable(false);
                 foreach (var prop in type.GetProperties())
                 {
-                    builder.WithProperty(prop.Name, s => s.OfType(prop.PropertyType));
+                    var pattern = prop.GetCustomAttribute<PatternAttribute>();
+                    var defaultValue = prop.GetCustomAttribute<DefaultAttribute>();
+
+                    builder.WithProperty(prop.Name, s => s.OfType(prop.PropertyType, prop.IsNullable(), pattern?.Pattern, defaultValue?.Default));
                 }
 
                 builder.WithRequired(type.GetProperties()

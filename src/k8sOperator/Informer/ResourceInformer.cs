@@ -104,12 +104,12 @@ where TResource : CustomResource
                     }
 
                     // Skip status-only updates by checking generation
-                    if (ShouldSkipEvent(evt))
-                    {
-                        // Still update cache but don't trigger reconciliation
-                        _cache.Apply(evt);
-                        continue;
-                    }
+                    //if (ShouldSkipEvent(evt))
+                    //{
+                    //    // Still update cache but don't trigger reconciliation
+                    //    _cache.Apply(evt);
+                    //    continue;
+                    //}
 
                     _cache.Apply(evt);
                     await _events.Writer.WriteAsync(evt, cancellationToken);

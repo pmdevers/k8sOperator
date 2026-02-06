@@ -4,10 +4,11 @@ using k8s.Operator;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddResponseCaching();
+builder.Services.AddResponseCompression();
+
 builder.Services.AddOperator(x =>
 {
-    x.LeaderElectionOptions.ElectionType = k8s.Operator.Leader.LeaderElectionType.Lease;
-
     x.OperatorConfiguration.OperatorName = "k8s-frontman";
     x.OperatorConfiguration.Namespace = "default";
     x.OperatorConfiguration.ContainerRegistry = "ghcr.io";
@@ -16,6 +17,9 @@ builder.Services.AddOperator(x =>
 });
 
 var app = builder.Build();
+
+app.UseResponseCaching();
+app.UseResponseCompression();
 
 app.MapProvider();
 app.MapRelease();

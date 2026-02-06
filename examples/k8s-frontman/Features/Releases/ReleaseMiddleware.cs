@@ -76,6 +76,9 @@ public class ReleaseMiddleware(RequestDelegate next,
         context.Response.ContentType = contentType;
         context.Response.ContentLength = fileInfo.Length;
 
+        context.Response.Headers.CacheControl = "public, max-age=31536000, immutable";
+        context.Response.Headers.ETag = $"\"{release.Status?.CurrentVersion}-{fileInfo.LastModified.Ticks}\"";
+
         using var stream = fileInfo.CreateReadStream();
         await stream.CopyToAsync(context.Response.Body);
     }
