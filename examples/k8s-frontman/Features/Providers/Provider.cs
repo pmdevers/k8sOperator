@@ -17,7 +17,7 @@ public class Provider : CustomResource<Provider.Specs, Provider.State>
         public FileProviderOptions? File { get; set; }
         public AzureBlobFileProviderOptions? AzureBlob { get; set; }
 
-        [Pattern("^([0-9]+(\\.[0-9]+)?(ms|s|m))+$")]
+        [ResyncInterval]
         [Default("5m")]
         public string Interval { get; set; } = "5m";
     }

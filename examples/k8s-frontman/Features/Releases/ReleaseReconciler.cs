@@ -1,4 +1,5 @@
 ﻿using k8s.Frontman.Features.Providers;
+using k8s.Models;
 using k8s.Operator;
 
 namespace k8s.Frontman.Features.Releases;
@@ -16,13 +17,6 @@ public static class ReleaseReconciler
             return;
         }
 
-        await context.Update<Release>()
-            .AddLabel("managed-by", "simple-operator")
-            .AddLabel("processed", "true")
-            .AddLabel("frontman.io/release-provider", newVersion.Spec.Provider)
-            .AddAnnotation("last-reconcile", DateTime.UtcNow.ToString("o"))
-            .ApplyAsync();
-
         var current = infromer.Get(newVersion.Metadata.Name, newVersion.Metadata.NamespaceProperty);
         var provider = providers.Get(newVersion.Spec.Provider, newVersion.Metadata.NamespaceProperty);
 
@@ -33,10 +27,19 @@ public static class ReleaseReconciler
             {
                 x.Status = x.Status ?? new();
                 x.Status.Message = $"Provider '{newVersion.Spec.Provider}' not found.";
+
+
             }).ApplyAsync();
 
             return;
         }
+
+        await context.Update<Release>()
+           .AddLabel("managed-by", context.Configuration.OperatorName)
+           .AddLabel("processed", "true")
+           .AddLabel($"{newVersion.ApiGroup()}/provider", newVersion.Spec.Provider)
+           .AddAnnotation("last-reconcile", DateTime.UtcNow.ToString("o"))
+           .ApplyAsync();
 
         if (!provider.Status!.Versions.Contains(newVersion.Spec.Version))
         {
@@ -45,6 +48,10 @@ public static class ReleaseReconciler
             {
                 x.Status = x.Status ?? new();
                 x.Status.Message = $"Version '{newVersion.Spec.Version}' not found.";
+                if (current?.Status?.CurrentVersion != newVersion.Spec.Version)
+                {
+                    x.Status.PreviousVersion = current?.Status?.CurrentVersion ?? string.Empty;
+                }
             }).ApplyAsync();
 
             await context.Queue.Requeue(context.ResourceKey, TimeSpan.FromSeconds(30), context.CancellationToken);

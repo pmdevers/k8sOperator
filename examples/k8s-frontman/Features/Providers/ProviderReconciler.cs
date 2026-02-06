@@ -1,5 +1,4 @@
 ﻿using k8s.Operator;
-using System.Text.RegularExpressions;
 
 namespace k8s.Frontman.Features.Providers;
 
@@ -10,14 +9,13 @@ public static partial class ProviderReconciler
         var informer = context.GetInformer<Provider>();
         var key = context.ResourceKey;
 
-        var provider = context.Resource as Provider;
-        if (provider == null)
+        if (context.Resource is not Provider provider)
         {
             return;
         }
 
         await context.Update<Provider>()
-            .AddLabel("managed-by", "simple-operator")
+            .AddLabel("managed-by", context.Configuration.OperatorName)
             .AddLabel("processed", "true")
             .AddAnnotation("last-reconcile", DateTime.UtcNow.ToString("o"))
             .ApplyAsync();
@@ -39,39 +37,5 @@ public static partial class ProviderReconciler
             })
             .ApplyAsync();
         }
-
-        var timeSpan = ParseCustomTime(provider.Spec.Interval);
-
-        await context.Queue.Requeue(key, timeSpan, context.CancellationToken);
     }
-
-    static TimeSpan ParseCustomTime(string input)
-    {
-        if (string.IsNullOrWhiteSpace(input))
-            throw new ArgumentException("Input cannot be empty.");
-
-        int hours = 0, minutes = 0, seconds = 0;
-
-        // Regex to match number + unit (h, m, s)
-        var matches = Timespan().Matches(input);
-
-        foreach (Match match in matches)
-        {
-            int value = int.Parse(match.Groups[1].Value);
-            string unit = match.Groups[2].Value.ToLower();
-
-            switch (unit)
-            {
-                case "h": hours += value; break;
-                case "m": minutes += value; break;
-                case "s": seconds += value; break;
-                default: throw new FormatException($"Unknown unit: {unit}");
-            }
-        }
-
-        return new TimeSpan(hours, minutes, seconds);
-    }
-
-    [GeneratedRegex(@"(\d+)\s*([hms])", RegexOptions.IgnoreCase)]
-    private static partial Regex Timespan();
 }

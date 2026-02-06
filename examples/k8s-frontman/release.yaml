@@ -1,4 +1,7 @@
-spec: {}
+spec:
+  provider: provider
+  url: test
+  version: v1.0.0
 metadata:
   name: release
   namespace: default

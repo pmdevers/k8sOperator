@@ -11,8 +11,26 @@ public class WorkQueue<TItem>() : IWorkQueue<TItem>
         => await _channel.Reader.ReadAsync(cancellationToken);
     public async ValueTask Requeue(TItem item, TimeSpan? delay = null, CancellationToken cancellationToken = default)
     {
-        if (delay.HasValue)
-            await Task.Delay(delay.Value, cancellationToken);
+        if (delay.HasValue && delay.Value > TimeSpan.Zero)
+        {
+            // Run delay and enqueue in background
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await Task.Delay(delay.Value, cancellationToken);
+                    await EnqueueAsync(item, cancellationToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    // Cancelled, don't requeue
+                }
+            }, cancellationToken);
+
+            return;
+        }
+
+        // No delay, enqueue immediately
         await EnqueueAsync(item, cancellationToken);
     }
 }

@@ -55,6 +55,19 @@ where TResource : CustomResource
         _lastResourceVersion = list.ResourceVersion();
         _synced = true;
 
+        // Emit synthetic "Added" events for all existing resources
+        // This ensures reconcilers run on startup for existing resources
+        foreach (var item in list.Items)
+        {
+            var addedEvent = new WatchEvent<TResource>
+            {
+                Type = WatchEventType.Added,
+                Object = item
+            };
+
+            await _events.Writer.WriteAsync(addedEvent, cancellationToken);
+        }
+
         _ = Task.Run(() => WatchLoop(cancellationToken), cancellationToken);
     }
 
@@ -104,12 +117,12 @@ where TResource : CustomResource
                     }
 
                     // Skip status-only updates by checking generation
-                    //if (ShouldSkipEvent(evt))
-                    //{
-                    //    // Still update cache but don't trigger reconciliation
-                    //    _cache.Apply(evt);
-                    //    continue;
-                    //}
+                    if (ShouldSkipEvent(evt))
+                    {
+                        // Still update cache but don't trigger reconciliation
+                        _cache.Apply(evt);
+                        continue;
+                    }
 
                     _cache.Apply(evt);
                     await _events.Writer.WriteAsync(evt, cancellationToken);
@@ -128,6 +141,11 @@ where TResource : CustomResource
         if (evt.Type == WatchEventType.Deleted)
         {
             return false; // Never skip delete events
+        }
+
+        if (evt.Type == WatchEventType.Added)
+        {
+            return false; // Never skip add events (new resources)
         }
 
         if (evt.Object?.Metadata == null)

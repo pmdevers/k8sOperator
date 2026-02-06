@@ -1,5 +1,6 @@
 ﻿using k8s.Operator;
 using k8s.Operator.Builders;
+using k8s.Operator.Configuration;
 using k8s.Operator.Informer;
 using k8s.Operator.Models;
 using k8s.Operator.Queue;
@@ -17,6 +18,7 @@ public class OperatorContext(IServiceProvider serviceProvider)
     public required CustomResource? Resource { get; init; }
     public required ResourceKey ResourceKey { get; init; }
     public required CancellationToken CancellationToken { get; init; }
+    public OperatorConfiguration Configuration => Services.GetRequiredService<OperatorConfiguration>();
     public IKubernetes Kubernetes => _kubernetes;
     public IWorkQueue<ResourceKey> Queue => _queue;
 
