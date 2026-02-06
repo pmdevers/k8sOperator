@@ -54,18 +54,18 @@ public static class OperatorExtensions
                 var config = provider.Build();
 
                 // Apply OperatorBuilder overrides if provided
-                if (builder.OperatorConfiguration != null)
+                if (builder.Operator != null)
                 {
-                    if (!string.IsNullOrEmpty(builder.OperatorConfiguration.OperatorName))
-                        config.OperatorName = builder.OperatorConfiguration.OperatorName;
-                    if (!string.IsNullOrEmpty(builder.OperatorConfiguration.Namespace))
-                        config.Namespace = builder.OperatorConfiguration.Namespace;
-                    if (!string.IsNullOrEmpty(builder.OperatorConfiguration.ContainerRegistry))
-                        config.ContainerRegistry = builder.OperatorConfiguration.ContainerRegistry;
-                    if (!string.IsNullOrEmpty(builder.OperatorConfiguration.ContainerRepository))
-                        config.ContainerRepository = builder.OperatorConfiguration.ContainerRepository;
-                    if (!string.IsNullOrEmpty(builder.OperatorConfiguration.ContainerTag))
-                        config.ContainerTag = builder.OperatorConfiguration.ContainerTag;
+                    if (!string.IsNullOrEmpty(builder.Operator.Name))
+                        config.Name = builder.Operator.Name;
+                    if (!string.IsNullOrEmpty(builder.Operator.Namespace))
+                        config.Namespace = builder.Operator.Namespace;
+                    if (!string.IsNullOrEmpty(builder.Operator.ContainerRegistry))
+                        config.ContainerRegistry = builder.Operator.ContainerRegistry;
+                    if (!string.IsNullOrEmpty(builder.Operator.ContainerRepository))
+                        config.ContainerRepository = builder.Operator.ContainerRepository;
+                    if (!string.IsNullOrEmpty(builder.Operator.ContainerTag))
+                        config.ContainerTag = builder.Operator.ContainerTag;
                 }
 
                 config.Validate();
@@ -75,12 +75,12 @@ public static class OperatorExtensions
             services.TryAddSingleton(sp =>
             {
                 var config = sp.GetRequiredService<OperatorConfiguration>();
-                var leaderElection = builder.LeaderElectionOptions;
+                var leaderElection = builder.LeaderElection;
 
                 // Set default lease name and namespace if not already set
                 if (string.IsNullOrEmpty(leaderElection.LeaseName))
                 {
-                    leaderElection.LeaseName = $"{config.OperatorName}-leader-election";
+                    leaderElection.LeaseName = $"{config.Name}-leader-election";
                 }
                 if (string.IsNullOrEmpty(leaderElection.LeaseNamespace))
                 {

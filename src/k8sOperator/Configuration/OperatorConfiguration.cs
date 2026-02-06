@@ -11,7 +11,7 @@ public class OperatorConfiguration
     /// <summary>
     /// Name of the operator (e.g., "my-operator")
     /// </summary>
-    public string OperatorName { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
 
     /// <summary>
     /// Kubernetes namespace where the operator runs (e.g., "my-operator-system")
@@ -78,7 +78,7 @@ public class OperatorConfiguration
     /// </exception>
     public void Validate()
     {
-        if (string.IsNullOrWhiteSpace(OperatorName))
+        if (string.IsNullOrWhiteSpace(Name))
         {
             throw new InvalidOperationException(
                 "OperatorName must be configured. " +

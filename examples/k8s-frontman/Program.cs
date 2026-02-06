@@ -9,11 +9,11 @@ builder.Services.AddResponseCompression();
 
 builder.Services.AddOperator(x =>
 {
-    x.OperatorConfiguration.OperatorName = "k8s-frontman";
-    x.OperatorConfiguration.Namespace = "default";
-    x.OperatorConfiguration.ContainerRegistry = "ghcr.io";
-    x.OperatorConfiguration.ContainerRepository = "pmdevers/k8s-frontman";
-    x.OperatorConfiguration.ContainerTag = "v1.0.0";
+    x.Operator.Name = "k8s-frontman";
+    x.Operator.Namespace = "default";
+    x.Operator.ContainerRegistry = "ghcr.io";
+    x.Operator.ContainerRepository = "pmdevers/k8s-frontman";
+    x.Operator.ContainerTag = "v1.0.0";
 });
 
 var app = builder.Build();

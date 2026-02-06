@@ -102,18 +102,18 @@ public class InstallCommand(IHost app) : IOperatorCommand
         var deployment = KubernetesObjectBuilder.Create<V1Deployment>();
 
         deployment
-            .WithName($"{config.OperatorName}")
+            .WithName($"{config.Name}")
             .WithNamespace(config.Namespace)
-            .WithLabel("operator", config.OperatorName)
+            .WithLabel("operator", config.Name)
             .WithSpec()
                 .WithReplicas(1)
                 .WithRevisionHistory(0)
                 .WithSelector(matchLabels: x =>
                 {
-                    x.Add("operator", config.OperatorName);
+                    x.Add("operator", config.Name);
                 })
                 .WithTemplate()
-                    .WithLabel("operator", config.OperatorName)
+                    .WithLabel("operator", config.Name)
 
                     .WithPod()
                         .WithSecurityContext(b =>
@@ -136,7 +136,7 @@ public class InstallCommand(IHost app) : IOperatorCommand
                                 x.RunAsGroup(2024);
                                 x.WithCapabilities(x => x.WithDrop("ALL"));
                             })
-                            .WithName(config.OperatorName)
+                            .WithName(config.Name)
                             .WithImage(config.ContainerImage)
                             .WithResources(
                                 limits: x =>
@@ -159,8 +159,8 @@ public class InstallCommand(IHost app) : IOperatorCommand
     private static V1ClusterRoleBinding CreateClusterRoleBinding(OperatorConfiguration config)
     {
         var clusterrolebinding = KubernetesObjectBuilder.Create<V1ClusterRoleBinding>()
-            .WithName($"{config.OperatorName}-role-binding")
-            .WithRoleRef("rbac.authorization.k8s.io", "ClusterRole", $"{config.OperatorName}-role")
+            .WithName($"{config.Name}-role-binding")
+            .WithRoleRef("rbac.authorization.k8s.io", "ClusterRole", $"{config.Name}-role")
             .WithSubject(kind: "ServiceAccount", name: "default", ns: config.Namespace);
 
         return clusterrolebinding.Build();
@@ -169,7 +169,7 @@ public class InstallCommand(IHost app) : IOperatorCommand
     private static V1ClusterRole CreateClusterRole(OperatorConfiguration config, IEnumerable<IController> watchers)
     {
         var clusterrole = KubernetesObjectBuilder.Create<V1ClusterRole>()
-                    .WithName($"{config.OperatorName}-role");
+                    .WithName($"{config.Name}-role");
 
         clusterrole.AddRule()
             .WithGroups("")

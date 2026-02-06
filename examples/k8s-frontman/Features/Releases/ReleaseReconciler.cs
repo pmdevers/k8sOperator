@@ -35,7 +35,7 @@ public static class ReleaseReconciler
         }
 
         await context.Update<Release>()
-           .AddLabel("managed-by", context.Configuration.OperatorName)
+           .AddLabel("managed-by", context.Configuration.Name)
            .AddLabel("processed", "true")
            .AddLabel($"{newVersion.ApiGroup()}/provider", newVersion.Spec.Provider)
            .AddAnnotation("last-reconcile", DateTime.UtcNow.ToString("o"))

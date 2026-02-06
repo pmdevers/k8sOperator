@@ -15,7 +15,7 @@ public static partial class ProviderReconciler
         }
 
         await context.Update<Provider>()
-            .AddLabel("managed-by", context.Configuration.OperatorName)
+            .AddLabel("managed-by", context.Configuration.Name)
             .AddLabel("processed", "true")
             .AddAnnotation("last-reconcile", DateTime.UtcNow.ToString("o"))
             .ApplyAsync();

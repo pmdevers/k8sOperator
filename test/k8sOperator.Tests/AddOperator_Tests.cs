@@ -14,7 +14,12 @@ public class AddOperator_Tests
     public async Task Should_register_correct_services()
     {
         var services = new ServiceCollection();
-        services.AddOperator();
+        services.AddOperator(x =>
+        {
+            x.Operator.Name = "test-operator";
+            x.Operator.Namespace = "default";
+            x.Operator.ContainerRepository = "test-repo";
+        });
         var serviceProvider = services.BuildServiceProvider();
 
         var datasource = serviceProvider.GetService<ControllerDatasource>();

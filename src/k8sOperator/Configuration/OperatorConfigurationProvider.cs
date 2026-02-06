@@ -43,7 +43,7 @@ public class OperatorConfigurationProvider(
         var operatorNameAttr = _assembly.GetCustomAttribute<OperatorNameAttribute>();
         if (operatorNameAttr != null && !string.IsNullOrEmpty(operatorNameAttr.OperatorName))
         {
-            config.OperatorName = operatorNameAttr.OperatorName;
+            config.Name = operatorNameAttr.OperatorName;
         }
 
         // Read Namespace from assembly attribute

@@ -20,7 +20,7 @@ public class HelpCommand(IHost host, IEnumerable<Type> commandTypes) : IOperator
     {
         var config = host.Services.GetRequiredService<OperatorConfiguration>();
 
-        var operatorName = config.OperatorName;
+        var operatorName = config.Name;
 
         Console.WriteLine($"Welcome to the help for {operatorName}.");
         Console.WriteLine();
