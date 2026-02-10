@@ -9,7 +9,7 @@
     <CreateOperatorLaunchSettings>true</CreateOperatorLaunchSettings>
     <GenerateOperatorDockerfile>true</GenerateOperatorDockerfile>
     <PublishSingleFileExecutable>true</PublishSingleFileExecutable>
-    <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
   </PropertyGroup>
 
   <ItemGroup>

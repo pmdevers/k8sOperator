@@ -107,8 +107,11 @@ public static class OperatorExtensions
                 var registry = new CommandRegistry();
 
                 // Discover and register built-in commands
-                registry.DiscoverCommands(typeof(HelpCommand).Assembly);
-                registry.DiscoverCommands(Assembly.GetCallingAssembly());
+                registry.RegisterCommand<HelpCommand>();
+                registry.RegisterCommand<InstallCommand>();
+                registry.RegisterCommand<VersionCommand>();
+                registry.RegisterCommand<CreateCommand>();
+                registry.RegisterCommand<OperatorCommand>();
 
                 // Discover commands in entry assembly
                 var entryAssembly = Assembly.GetEntryAssembly();

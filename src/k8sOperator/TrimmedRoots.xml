@@ -1,0 +1,8 @@
+﻿<linker>
+  <assembly fullname="k8sOperator" preserve="all">
+    <!-- Preserve all command types for reflection -->
+    <type fullname="k8s.Operator.Host.Commands.*" preserve="all" />
+    <type fullname="k8s.Operator.Host.IOperatorCommand" preserve="all" />
+    <type fullname="k8s.Operator.Host.OperatorArgumentAttribute" preserve="all" />
+  </assembly>
+</linker>

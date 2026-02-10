@@ -8,6 +8,19 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Preserve all types that implement IOperatorCommand for reflection -->
+    <TrimmerRootAssembly Include="$(AssemblyName)" />
+
+    <!-- Or preserve specific types -->
+    <TrimmerRootDescriptor Include="TrimmerRoots.xml" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <!-- Reduce trimming aggressiveness for operators -->
+    <TrimMode>partial</TrimMode>
+  </PropertyGroup>
+
+  <ItemGroup>
     <PackageReference Include="KubernetesClient" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
