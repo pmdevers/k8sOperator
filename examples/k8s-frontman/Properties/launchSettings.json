@@ -12,7 +12,17 @@
             },
             "launchBrowser": false
         },
-
+        "version": {
+            "applicationUrl": "http://localhost:5137",
+            "commandLineArgs": "version",
+            "commandName": "Project",
+            "dotnetRunMessages": true,
+            "environmentVariables": {
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "ASPNETCORE_HOSTINGSTARTUPASSEMBLIES": ""
+            },
+            "launchBrowser": false
+        },
         "Create Release": {
             "applicationUrl": "http://localhost:5137",
             "commandLineArgs": "create release > release.yaml",

@@ -58,6 +58,14 @@ public class CommandHandler
         }
 
         // Use DI to create the command
-        return (IOperatorCommand)ActivatorUtilities.CreateInstance(_host.Services, commandType);
+        try
+        {
+            return (IOperatorCommand)ActivatorUtilities.CreateInstance(_host.Services, commandType);
+        }
+        catch
+        {
+            // If that fails, try with IHost as parameter (for OperatorCommand)
+            return (IOperatorCommand)ActivatorUtilities.CreateInstance(_host.Services, commandType, _host);
+        }
     }
 }
