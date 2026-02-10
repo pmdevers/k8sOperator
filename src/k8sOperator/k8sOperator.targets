@@ -76,6 +76,11 @@
 			<_Parameter1>$(OperatorNamespace)</_Parameter1>
 		</AssemblyAttribute>
 	</ItemGroup>
+
+	<ItemGroup>
+		<TrimmerRootDescriptor Include="$(MSBuildThisFileDirectory)TrimmedRoots.xml"
+							   Condition="Exists('$(MSBuildThisFileDirectory)TrimmedRoots.xml')" />
+	</ItemGroup>
 	
 	<!-- Add DockerImageAttribute dynamically to ensure Version is available -->
 	<Target Name="AddDockerImageAttribute" BeforeTargets="GetAssemblyAttributes;CoreCompile">

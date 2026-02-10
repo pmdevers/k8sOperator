@@ -21,11 +21,8 @@ public class CommandRegistry
             throw new ArgumentException($"Command type must implement {nameof(IOperatorCommand)}", nameof(commandType));
         }
 
-        var attribute = commandType.GetCustomAttribute<OperatorArgumentAttribute>();
-        if (attribute == null)
-        {
-            throw new ArgumentException($"Command type must have {nameof(OperatorArgumentAttribute)}", nameof(commandType));
-        }
+        var attribute = commandType.GetCustomAttribute<OperatorArgumentAttribute>()
+            ?? throw new ArgumentException($"Command type must have {nameof(OperatorArgumentAttribute)}", nameof(commandType));
 
         // Prevent duplicate registration
         if (_allCommandTypes.Contains(commandType))

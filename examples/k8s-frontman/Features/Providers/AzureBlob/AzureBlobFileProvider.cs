@@ -1,10 +1,11 @@
 ﻿using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
+using k8s.Frontman.Features.Providers;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Primitives;
 
-namespace k8s.Frontman.Features.Providers.Azure;
+namespace k8s.Frontman.Features.Providers.AzureBlob;
 
 public class AzureBlobFileProvider(string connectionString, string containerName, string root) : IFileProvider
 {
@@ -65,7 +66,7 @@ public class AzureBlobFileProvider(string connectionString, string containerName
         public IEnumerator<IFileInfo> GetEnumerator()
         {
             var prefix = string.IsNullOrEmpty(_prefix) ? "" : $"{_prefix}/";
-            var options = new GetBlobsOptions() { Prefix = _prefix };
+            var options = new GetBlobsOptions() { Prefix = prefix };
 
             var blobs = containerClient.GetBlobs(options);
 
@@ -83,7 +84,7 @@ public class AzureBlobFileProvider(string connectionString, string containerName
     }
     internal class AzureBlobFileInfo(BlobClient blobClient, string name, bool isDirectory = false) : IFileInfo
     {
-        private readonly string _name = isDirectory ? Path.GetDirectoryName(name) : Path.GetFileName(name);
+        private readonly string _name = (isDirectory ? Path.GetDirectoryName(name) : Path.GetFileName(name)) ?? string.Empty;
         private BlobProperties? _properties;
 
         public bool Exists

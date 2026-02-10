@@ -28,6 +28,7 @@
 
   <!-- Pack Operator.targets for NuGet consumers (both direct and transitive) -->
   <ItemGroup>
+    <None Include="TrimmedRoots.xml" Pack="true" PackagePath="build\$(TargetFramework)" />
     <None Include="k8sOperator.targets" Pack="true" PackagePath="build\$(PackageId).targets" />
     <None Include="k8sOperator.targets" Pack="true" PackagePath="buildTransitive\$(PackageId).targets" />
   </ItemGroup>

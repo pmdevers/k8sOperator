@@ -1,4 +1,4 @@
-﻿using k8s.Frontman.Features.Providers.Azure;
+﻿using k8s.Frontman.Features.Providers.AzureBlob;
 using k8s.Frontman.Features.Providers.File;
 using k8s.Models;
 using k8s.Operator.Generation.Attributes;

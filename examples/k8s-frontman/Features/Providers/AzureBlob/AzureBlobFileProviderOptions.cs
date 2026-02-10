@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.FileProviders;
 
-namespace k8s.Frontman.Features.Providers.Azure;
+namespace k8s.Frontman.Features.Providers.AzureBlob;
 
 public class AzureBlobFileProviderOptions : IFileProviderFactory
 {
