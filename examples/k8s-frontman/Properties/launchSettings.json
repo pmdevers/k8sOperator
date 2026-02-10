@@ -7,7 +7,8 @@
             "commandName": "Project",
             "dotnetRunMessages": true,
             "environmentVariables": {
-                "ASPNETCORE_ENVIRONMENT": "Development"
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "ASPNETCORE_HOSTINGSTARTUPASSEMBLIES": ""
             },
             "launchBrowser": false
         },
@@ -18,7 +19,8 @@
             "commandName": "Project",
             "dotnetRunMessages": true,
             "environmentVariables": {
-                "ASPNETCORE_ENVIRONMENT": "Development"
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "ASPNETCORE_HOSTINGSTARTUPASSEMBLIES": ""
             },
             "launchBrowser": false
         },
@@ -28,7 +30,8 @@
             "commandName": "Project",
             "dotnetRunMessages": true,
             "environmentVariables": {
-                "ASPNETCORE_ENVIRONMENT": "Development"
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "ASPNETCORE_HOSTINGSTARTUPASSEMBLIES": ""
             },
             "launchBrowser": false
         },
@@ -38,7 +41,8 @@
             "commandName": "Project",
             "dotnetRunMessages": true,
             "environmentVariables": {
-                "ASPNETCORE_ENVIRONMENT": "Development"
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "ASPNETCORE_HOSTINGSTARTUPASSEMBLIES": ""
             },
             "launchBrowser": false
         },
@@ -48,7 +52,8 @@
             "commandName": "Project",
             "dotnetRunMessages": true,
             "environmentVariables": {
-                "ASPNETCORE_ENVIRONMENT": "Development"
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "ASPNETCORE_HOSTINGSTARTUPASSEMBLIES": ""
             },
             "launchBrowser": false
         }

@@ -4,7 +4,8 @@
       "commandName": "Project",
       "commandLineArgs": "operator",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_HOSTINGSTARTUPASSEMBLIES": ""
       },
       "dotnetRunMessages": true
     },
@@ -12,7 +13,17 @@
       "commandName": "Project",
       "commandLineArgs": "install > install.yaml",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_HOSTINGSTARTUPASSEMBLIES": ""
+      },
+      "dotnetRunMessages": true
+    },
+    "Create": {
+      "commandName": "Project",
+      "commandLineArgs": "create",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_HOSTINGSTARTUPASSEMBLIES": ""
       },
       "dotnetRunMessages": true
     },
@@ -20,7 +31,8 @@
       "commandName": "Project",
       "commandLineArgs": "version",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_HOSTINGSTARTUPASSEMBLIES": ""
       },
       "dotnetRunMessages": true
     },
@@ -28,7 +40,8 @@
       "commandName": "Project",
       "commandLineArgs": "help",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_HOSTINGSTARTUPASSEMBLIES": ""
       },
       "dotnetRunMessages": true
     }
