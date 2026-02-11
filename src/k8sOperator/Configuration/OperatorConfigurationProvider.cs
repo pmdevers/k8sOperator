@@ -39,6 +39,12 @@ public class OperatorConfigurationProvider(
 
     private void ApplyAssemblyAttributes(OperatorConfiguration config)
     {
+        var versionAttrib = _assembly.GetCustomAttribute<AssemblyFileVersionAttribute>();
+        if (versionAttrib != null && !string.IsNullOrEmpty(versionAttrib.Version))
+        {
+            config.Version = versionAttrib.Version;
+        }
+
         // Read OperatorName from assembly attribute
         var operatorNameAttr = _assembly.GetCustomAttribute<OperatorNameAttribute>();
         if (operatorNameAttr != null && !string.IsNullOrEmpty(operatorNameAttr.OperatorName))

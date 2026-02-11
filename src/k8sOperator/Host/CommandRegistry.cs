@@ -91,6 +91,7 @@ public class CommandRegistry
             typeof(Commands.InstallCommand),
             typeof(Commands.VersionCommand),
             typeof(Commands.HelpCommand),
+            //typeof(Commands.UpdateCommand)
         };
 
         foreach (var type in builtInCommandTypes)

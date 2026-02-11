@@ -31,7 +31,7 @@
 		<Message Importance="high" Text="k8sOperator: OperatorNamespace=$(OperatorNamespace)" />
 		<Message Importance="high" Text="k8sOperator: ContainerRegistry=$(ContainerRegistry)" />
 		<Message Importance="high" Text="k8sOperator: ContainerRepository=$(ContainerRepository)" />
-		<Message Importance="high" Text="k8sOperator: Version=$(Version)" />
+		<Message Importance="high" Text="k8sOperator: FileVersion=$(FileVersion)" />
 		<Message Importance="high" Text="k8sOperator: ContainerImageTag=$(ContainerImageTag)" />
 		<Message Importance="high" Text="k8sOperator: ContainerFamily=$(ContainerFamily)" />
 		
@@ -45,7 +45,7 @@
 
 		<ContainerRegistry Condition=" '$(ContainerRegistry)' == '' ">ghcr.io</ContainerRegistry>
 		<ContainerRepository Condition=" '$(ContainerRepository)' == '' ">$(Company)/$(OperatorName)</ContainerRepository>
-		<ContainerImageTag Condition=" '$(ContainerImageTag)' == '' ">$(Version)</ContainerImageTag>
+		<ContainerImageTag Condition=" '$(ContainerImageTag)' == '' ">$(FileVersion)</ContainerImageTag>
 		<ContainerFamily Condition=" '$(ContainerFamily)' == '' "></ContainerFamily>
 		
 		<!-- Allow users to opt-in to including launch settings -->
@@ -85,7 +85,7 @@
 	<!-- Add DockerImageAttribute dynamically to ensure Version is available -->
 	<Target Name="AddDockerImageAttribute" BeforeTargets="GetAssemblyAttributes;CoreCompile">
 		<PropertyGroup>
-			<_ContainerImageTagValue Condition=" '$(ContainerImageTag)' == '' ">$(Version)</_ContainerImageTagValue>
+			<_ContainerImageTagValue Condition=" '$(ContainerImageTag)' == '' ">$(FileVersion)</_ContainerImageTagValue>
 			<_ContainerImageTagValue Condition=" '$(ContainerImageTag)' != '' ">$(ContainerImageTag)</_ContainerImageTagValue>
 			
 			<_ContainerRepositorySuffix Condition=" '$(ContainerRepository)' == '' ">$(Company)/</_ContainerRepositorySuffix>

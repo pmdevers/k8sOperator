@@ -15,9 +15,9 @@ public interface IObjectBuilder<out T>
     IObjectBuilder<T> Add(Action<T> action);
 
     /// <summary>
-    /// Builds the resource with the added actions.
+    /// Creates and returns an instance of type <typeparamref name="T"/> based on the current configuration.
     /// </summary>
-    /// <returns></returns>
+    /// <returns>An instance of type <typeparamref name="T"/> constructed according to the configured settings.</returns>
     T Build();
 }
 
@@ -63,6 +63,14 @@ public static class KubernetesObjectBuilder
     public static IObjectBuilder<T> CreateMeta<T>()
         where T : IMetadata<V1ObjectMeta>, new()
     {
-        return new ObjectBuilder<T>().Add(x => x.Metadata = new());
+        return new ObjectBuilder<T>()
+            .Add(x =>
+            {
+                if (x is IKubernetesObject o)
+                {
+                    o.Initialize();
+                }
+            })
+            .Add(x => x.Metadata = new());
     }
 }

@@ -66,6 +66,9 @@ public static class OperatorExtensions
                         config.ContainerRepository = builder.Operator.ContainerRepository;
                     if (!string.IsNullOrEmpty(builder.Operator.ContainerTag))
                         config.ContainerTag = builder.Operator.ContainerTag;
+                    if (!string.IsNullOrEmpty(builder.Operator.UpdateUrl))
+                        config.UpdateUrl = builder.Operator.UpdateUrl;
+
                 }
 
                 config.Validate();
@@ -100,6 +103,8 @@ public static class OperatorExtensions
                 };
                 return (ILeaderElectionService)ActivatorUtilities.CreateInstance(sp, type);
             });
+
+            services.TryAddSingleton(x => builder.InstallCommand ?? new InstallCommandOptions());
 
             // Register command infrastructure
             services.TryAddSingleton(sp =>

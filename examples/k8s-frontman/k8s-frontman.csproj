@@ -10,6 +10,9 @@
     <GenerateOperatorDockerfile>true</GenerateOperatorDockerfile>
     <PublishSingleFileExecutable>true</PublishSingleFileExecutable>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+
+    <FileVersion>0.0.1-alpha0003</FileVersion>
+    
   </PropertyGroup>
 
   <ItemGroup>

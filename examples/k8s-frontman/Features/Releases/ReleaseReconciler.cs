@@ -8,11 +8,10 @@ public static class ReleaseReconciler
 {
     public static async Task ReconcileAsync(OperatorContext context)
     {
-        var newVersion = context.Resource as Release;
         var infromer = context.GetInformer<Release>();
         var providers = context.GetInformer<Provider>();
 
-        if (newVersion == null)
+        if (context.Resource is not Release newVersion)
         {
             return;
         }
@@ -25,7 +24,7 @@ public static class ReleaseReconciler
             await context.Update<Release>()
             .WithStatus(x =>
             {
-                x.Status = x.Status ?? new();
+                x.Status ??= new();
                 x.Status.Message = $"Provider '{newVersion.Spec.Provider}' not found.";
 
 
@@ -46,7 +45,7 @@ public static class ReleaseReconciler
             await context.Update<Release>()
             .WithStatus(x =>
             {
-                x.Status = x.Status ?? new();
+                x.Status ??= new();
                 x.Status.Message = $"Version '{newVersion.Spec.Version}' not found.";
                 if (current?.Status?.CurrentVersion != newVersion.Spec.Version)
                 {
@@ -62,7 +61,7 @@ public static class ReleaseReconciler
         await context.Update<Release>()
             .WithStatus(x =>
             {
-                x.Status = x.Status ?? new();
+                x.Status ??= new();
 
                 if (current?.Status?.CurrentVersion != newVersion.Spec.Version)
                 {

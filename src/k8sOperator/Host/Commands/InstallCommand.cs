@@ -4,10 +4,15 @@ using k8s.Operator.Configuration;
 using k8s.Operator.Controller;
 using k8s.Operator.Generation;
 using k8s.Operator.Metadata;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 
 namespace k8s.Operator.Host.Commands;
+
+public class InstallCommandOptions
+{
+    public Action<IObjectBuilder<V1Deployment>>? Deployment { get; set; } = null;
+    public List<IKubernetesObject> AdditionalObjects { get; set; } = [];
+}
+
 
 [OperatorArgument(
     Command = "install",
@@ -15,19 +20,18 @@ namespace k8s.Operator.Host.Commands;
     Aliases = new[] { "-i", "--install" },
     Order = 1
 )]
-public class InstallCommand(IHost app) : IOperatorCommand
+public class InstallCommand(OperatorConfiguration config, ControllerDatasource datasource, InstallCommandOptions options) : IOperatorCommand
 {
     private readonly StringWriter _output = new();
 
     public async Task RunAsync(string[] args)
     {
-        var dataSource = app.Services.GetRequiredService<ControllerDatasource>();
-        var config = app.Services.GetRequiredService<OperatorConfiguration>();
-        var watchers = dataSource.GetControllers().ToList();
+        var watchers = datasource.GetControllers().ToList();
         var ns = CreateNamespace(config);
         var clusterrole = CreateClusterRole(config, watchers);
         var clusterrolebinding = CreateClusterRoleBinding(config);
-        var deployment = CreateDeployment(config);
+
+        var deployment = CreateDeployment(config, options.Deployment);
 
         foreach (var item in watchers)
         {
@@ -41,6 +45,11 @@ public class InstallCommand(IHost app) : IOperatorCommand
         await Write(ns);
         await Write(deployment);
 
+        foreach (var obj in options.AdditionalObjects)
+        {
+            await Write(obj);
+        }
+
         Console.WriteLine(_output.ToString());
     }
 
@@ -50,7 +59,7 @@ public class InstallCommand(IHost app) : IOperatorCommand
         await _output.WriteLineAsync("---");
     }
 
-    private static V1Namespace CreateNamespace(OperatorConfiguration config)
+    internal static V1Namespace CreateNamespace(OperatorConfiguration config)
     {
         var nsBuilder = KubernetesObjectBuilder.Create<V1Namespace>();
         nsBuilder.WithName(config.Namespace);
@@ -58,7 +67,7 @@ public class InstallCommand(IHost app) : IOperatorCommand
         return nsBuilder.Build();
     }
 
-    private static V1CustomResourceDefinition CreateCustomResourceDefinition(IController item)
+    internal static V1CustomResourceDefinition CreateCustomResourceDefinition(IController item)
     {
         var group = item.Metadata.OfType<KubernetesEntityAttribute>().First();
         var scope = item.Metadata.OfType<ScopeAttribute>().FirstOrDefault()
@@ -97,7 +106,7 @@ public class InstallCommand(IHost app) : IOperatorCommand
         return crdBuilder.Build();
     }
 
-    private static V1Deployment CreateDeployment(OperatorConfiguration config)
+    internal static V1Deployment CreateDeployment(OperatorConfiguration config, Action<IObjectBuilder<V1Deployment>>? customize = null)
     {
         var deployment = KubernetesObjectBuilder.Create<V1Deployment>();
 
@@ -105,7 +114,7 @@ public class InstallCommand(IHost app) : IOperatorCommand
             .WithName($"{config.Name}")
             .WithNamespace(config.Namespace)
             .WithLabel("operator", config.Name)
-            .WithSpec()
+            .WithSpec(x => x
                 .WithReplicas(1)
                 .WithRevisionHistory(0)
                 .WithSelector(matchLabels: x =>
@@ -151,12 +160,14 @@ public class InstallCommand(IHost app) : IOperatorCommand
 
                                     x.Add("memory", new ResourceQuantity("64Mi"));
                                 }
-                            );
+                            ));
+
+        customize?.Invoke(deployment);
 
         return deployment.Build();
     }
 
-    private static V1ClusterRoleBinding CreateClusterRoleBinding(OperatorConfiguration config)
+    internal static V1ClusterRoleBinding CreateClusterRoleBinding(OperatorConfiguration config)
     {
         var clusterrolebinding = KubernetesObjectBuilder.Create<V1ClusterRoleBinding>()
             .WithName($"{config.Name}-role-binding")
@@ -166,7 +177,7 @@ public class InstallCommand(IHost app) : IOperatorCommand
         return clusterrolebinding.Build();
     }
 
-    private static V1ClusterRole CreateClusterRole(OperatorConfiguration config, IEnumerable<IController> watchers)
+    internal static V1ClusterRole CreateClusterRole(OperatorConfiguration config, IEnumerable<IController> watchers)
     {
         var clusterrole = KubernetesObjectBuilder.Create<V1ClusterRole>()
                     .WithName($"{config.Name}-role");

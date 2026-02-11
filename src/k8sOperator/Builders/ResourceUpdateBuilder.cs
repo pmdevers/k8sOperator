@@ -45,7 +45,7 @@ public class ResourceUpdateBuilder<TResource>(IKubernetes kubernetes, TResource 
     {
         _updates.Add(r =>
         {
-            r.Metadata.Finalizers ??= new List<string>();
+            r.Metadata.Finalizers ??= [];
             if (!r.Metadata.Finalizers.Contains(finalizer))
             {
                 r.Metadata.Finalizers.Add(finalizer);

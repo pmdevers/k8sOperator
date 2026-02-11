@@ -7,20 +7,23 @@ namespace k8s.Operator.Generation;
 /// </summary>
 public static class DeploymentBuilderExtensions
 {
-
-    /// <summary>
-    /// Configures the spec section of the deployment.
-    /// </summary>
-    /// <typeparam name="TBuilder">The type of the builder.</typeparam>
-    /// <param name="builder">The builder instance.</param>
-    /// <returns>A builder for configuring the deployment spec.</returns>
-    public static IObjectBuilder<V1DeploymentSpec> WithSpec<TBuilder>(this TBuilder builder)
-        where TBuilder : IObjectBuilder<V1Deployment>
+    extension(IObjectBuilder<V1Deployment> builder)
     {
-        var specBuilder = new ObjectBuilder<V1DeploymentSpec>();
-        builder.Add(x => x.Spec = specBuilder.Build());
-        return specBuilder;
+        /// <summary>
+        /// Sets the API version for the deployment.
+        /// </summary>
+        /// <param name="builder">The builder instance.</param>
+        /// <param name="apiVersion">The API version to set. Defaults to "apps/v1".</param>
+        /// <returns>The configured builder.</returns>
+        public IObjectBuilder<V1Deployment> WithSpec(Action<IObjectBuilder<V1DeploymentSpec>> configure)
+        {
+            var specBuilder = new ObjectBuilder<V1DeploymentSpec>();
+            configure(specBuilder);
+            builder.Add(x => x.Spec = specBuilder.Build());
+            return builder;
+        }
     }
+
 
     /// <summary>
     /// Sets the number of replicas for the deployment.

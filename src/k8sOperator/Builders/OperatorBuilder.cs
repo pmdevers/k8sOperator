@@ -1,4 +1,5 @@
 ﻿using k8s.Operator.Configuration;
+using k8s.Operator.Host.Commands;
 using k8s.Operator.Leader;
 
 namespace k8s.Operator.Builders;
@@ -10,4 +11,7 @@ public class OperatorBuilder
         = new LeaderElectionOptions();
     public OperatorConfiguration Operator { get; init; }
         = new OperatorConfiguration();
+
+    public InstallCommandOptions InstallCommand { get; init; }
+        = new InstallCommandOptions();
 }

@@ -6,7 +6,15 @@ namespace k8s.Operator.Configuration;
 /// </summary>
 public class OperatorConfiguration
 {
-    private string _containerTag = "latest";
+    /// <summary>
+    /// Gets or sets the URL used to check for application updates.
+    /// </summary>
+    public string? UpdateUrl { get; set; }
+
+    /// <summary>
+    /// Gets or sets the operator version. Defaults to "1.0.0" if not set via assembly attributes or configuration.
+    /// </summary>
+    public string Version { get; set; } = "1.0.0";
 
     /// <summary>
     /// Name of the operator (e.g., "my-operator")
@@ -31,11 +39,7 @@ public class OperatorConfiguration
     /// <summary>
     /// Docker image tag (e.g., "1.0.0" or "1.0.0-alpha"). Defaults to "latest" if not set.
     /// </summary>
-    public string ContainerTag
-    {
-        get => string.IsNullOrWhiteSpace(_containerTag) ? "latest" : _containerTag;
-        set => _containerTag = value;
-    }
+    public string ContainerTag { get; set; } = string.Empty;
 
     /// <summary>
     /// Full container image (registry/repository:tag).
@@ -50,7 +54,7 @@ public class OperatorConfiguration
         {
             var registry = ContainerRegistry?.Trim();
             var repository = ContainerRepository?.Trim();
-            var tag = ContainerTag; // Already handles default "latest"
+            var tag = ContainerTag ?? "latest"; // Already handles default "latest"
 
             if (string.IsNullOrWhiteSpace(registry))
             {
