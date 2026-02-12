@@ -8,7 +8,7 @@ public static class ServiceBuilderExtensions
     {
         public IObjectBuilder<V1Service> WithSpec(Action<IObjectBuilder<V1ServiceSpec>> configure)
         {
-            var b = new ObjectBuilder<V1ServiceSpec>();
+            var b = ObjectBuilder.Create<V1ServiceSpec>();
             configure(b);
             builder.Add(x => x.Spec = b.Build());
             return builder;
@@ -29,7 +29,7 @@ public static class ServiceBuilderExtensions
 
         public IObjectBuilder<V1ServiceSpec> AddPort(Action<IObjectBuilder<V1ServicePort>> configure)
         {
-            var b = new ObjectBuilder<V1ServicePort>();
+            var b = ObjectBuilder.Create<V1ServicePort>();
             configure(b);
             builder.Add(x =>
             {

@@ -17,7 +17,7 @@ public static class DeploymentBuilderExtensions
         /// <returns>The configured builder.</returns>
         public IObjectBuilder<V1Deployment> WithSpec(Action<IObjectBuilder<V1DeploymentSpec>> configure)
         {
-            var specBuilder = new ObjectBuilder<V1DeploymentSpec>();
+            var specBuilder = ObjectBuilder.Create<V1DeploymentSpec>();
             configure(specBuilder);
             builder.Add(x => x.Spec = specBuilder.Build());
             return builder;
@@ -104,7 +104,7 @@ public static class DeploymentBuilderExtensions
     public static IObjectBuilder<V1PodSpec> WithPod<TBuilder>(this TBuilder builder)
         where TBuilder : IObjectBuilder<V1PodTemplateSpec>
     {
-        var podBuilder = new ObjectBuilder<V1PodSpec>();
+        var podBuilder = ObjectBuilder.Create<V1PodSpec>();
         builder.Add(x => x.Spec = podBuilder.Build());
         return podBuilder;
     }
@@ -120,7 +120,7 @@ public static class DeploymentBuilderExtensions
     public static IObjectBuilder<V1Container> AddContainer<TBuilder>(this TBuilder builder)
         where TBuilder : IObjectBuilder<V1PodSpec>
     {
-        var b = new ObjectBuilder<V1Container>();
+        var b = ObjectBuilder.Create<V1Container>();
         builder.Add(x =>
         {
             x.Containers ??= [];
@@ -256,7 +256,7 @@ public static class DeploymentBuilderExtensions
     public static TBuilder WithSecurityContext<TBuilder>(this TBuilder builder, Action<IObjectBuilder<V1SecurityContext>> securityContext)
        where TBuilder : IObjectBuilder<V1Container>
     {
-        var b = new ObjectBuilder<V1SecurityContext>();
+        var b = ObjectBuilder.Create<V1SecurityContext>();
         securityContext(b);
 
         builder.Add(x => x.SecurityContext = b.Build());
@@ -273,7 +273,7 @@ public static class DeploymentBuilderExtensions
     public static TBuilder WithSecurityContext<TBuilder>(this TBuilder builder, Action<IObjectBuilder<V1PodSecurityContext>> securityContext)
         where TBuilder : IObjectBuilder<V1PodSpec>
     {
-        var b = new ObjectBuilder<V1PodSecurityContext>();
+        var b = ObjectBuilder.Create<V1PodSecurityContext>();
         securityContext(b);
 
         builder.Add(x => x.SecurityContext = b.Build());
@@ -346,7 +346,7 @@ public static class DeploymentBuilderExtensions
     public static TBuilder WithCapabilities<TBuilder>(this TBuilder builder, Action<IObjectBuilder<V1Capabilities>> capabilities)
       where TBuilder : IObjectBuilder<V1SecurityContext>
     {
-        var b = new ObjectBuilder<V1Capabilities>();
+        var b = ObjectBuilder.Create<V1Capabilities>();
         capabilities(b);
         builder.Add(x => x.Capabilities = b.Build());
         return builder;

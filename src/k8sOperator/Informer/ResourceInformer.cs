@@ -9,34 +9,24 @@ using System.Threading.Channels;
 
 namespace k8s.Operator.Informer;
 
-internal class ResourceInformer<TResource> :
+internal class ResourceInformer<TResource>(
+    IKubernetes client,
+    string? ns,
+    IResourceCache<TResource> cache,
+    TimeSpan? resyncPeriod = null) :
 IInformer<TResource>, IInformerInternal
 where TResource : CustomResource
 {
-    private readonly IKubernetes _client;
-    private readonly string? _namespace;
-    private readonly IResourceCache<TResource> _cache;
-    private readonly Channel<WatchEvent<TResource>> _events;
-    private readonly TimeSpan _resyncPeriod;
+    private readonly IKubernetes _client = client;
+    private readonly string? _namespace = ns;
+    private readonly IResourceCache<TResource> _cache = cache;
+    private readonly Channel<WatchEvent<TResource>> _events = Channel.CreateUnbounded<WatchEvent<TResource>>();
+    private readonly TimeSpan _resyncPeriod = resyncPeriod ?? TimeSpan.FromMinutes(10);
     private string? _lastResourceVersion;
-    private readonly KubernetesEntityAttribute _entityInfo;
+    private readonly KubernetesEntityAttribute _entityInfo = typeof(TResource).GetCustomAttribute<KubernetesEntityAttribute>()
+            ?? throw new InvalidOperationException($"Type {typeof(TResource).Name} must have KubernetesEntityAttribute");
 
     private volatile bool _synced;
-
-    public ResourceInformer(
-        IKubernetes client,
-        string? ns,
-        IResourceCache<TResource> cache,
-        TimeSpan? resyncPeriod = null)
-    {
-        _client = client;
-        _namespace = ns;
-        _cache = cache;
-        _events = Channel.CreateUnbounded<WatchEvent<TResource>>();
-        _resyncPeriod = resyncPeriod ?? TimeSpan.FromMinutes(10);
-        _entityInfo = typeof(TResource).GetCustomAttribute<KubernetesEntityAttribute>()
-            ?? throw new InvalidOperationException($"Type {typeof(TResource).Name} must have KubernetesEntityAttribute");
-    }
 
     public bool HasSynced => _synced;
 
@@ -128,7 +118,7 @@ where TResource : CustomResource
                     await _events.Writer.WriteAsync(evt, cancellationToken);
                 }
             }
-            catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
+            catch when (!cancellationToken.IsCancellationRequested)
             {
                 // Log and retry watch on error
                 await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);

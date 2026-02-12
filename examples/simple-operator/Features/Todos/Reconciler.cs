@@ -14,8 +14,7 @@ public static class Reconciler
     {
         var informer = context.GetInformer<TodoItem>();
         var key = context.ResourceKey;
-        var resource = context.Resource as TodoItem;
-        if (resource == null)
+        if (context.Resource is not TodoItem resource)
         {
             logger.LogInformation("TodoItem '{Name}' in namespace '{Namespace}' was deleted.",
                 key.Name, key.Namespace ?? "default");

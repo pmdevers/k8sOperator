@@ -19,7 +19,7 @@ public static partial class CustomResourceDefinitionBuilderExtensions
     public static IObjectBuilder<V1CustomResourceDefinitionSpec> WithSpec<TBuilder>(this TBuilder builder)
         where TBuilder : IObjectBuilder<V1CustomResourceDefinition>
     {
-        var specBuilder = new ObjectBuilder<V1CustomResourceDefinitionSpec>();
+        var specBuilder = ObjectBuilder.Create<V1CustomResourceDefinitionSpec>();
         builder.Add(x => x.Spec = specBuilder.Build());
         return specBuilder;
     }
@@ -96,7 +96,7 @@ public static partial class CustomResourceDefinitionBuilderExtensions
     public static TBuilder WithVersion<TBuilder>(this TBuilder builder, string name, Action<IObjectBuilder<V1CustomResourceDefinitionVersion>> schema)
         where TBuilder : IObjectBuilder<V1CustomResourceDefinitionSpec>
     {
-        var b = new ObjectBuilder<V1CustomResourceDefinitionVersion>();
+        var b = ObjectBuilder.Create<V1CustomResourceDefinitionVersion>();
         b.Add(x => x.Name = name);
         schema(b);
 
@@ -181,8 +181,8 @@ public static partial class CustomResourceDefinitionBuilderExtensions
     public static TBuilder WithSchemaForType<TBuilder>(this TBuilder builder, Type resourceType)
         where TBuilder : IObjectBuilder<V1CustomResourceDefinitionVersion>
     {
-        var b = new ObjectBuilder<V1CustomResourceValidation>();
-        var s = new ObjectBuilder<V1JSONSchemaProps>();
+        var b = ObjectBuilder.Create<V1CustomResourceValidation>();
+        var s = ObjectBuilder.Create<V1JSONSchemaProps>();
 
         s.OfType("object");
 
@@ -213,8 +213,8 @@ public static partial class CustomResourceDefinitionBuilderExtensions
     public static TBuilder WithSchema<TBuilder>(this TBuilder builder, Action<IObjectBuilder<V1JSONSchemaProps>> schema)
         where TBuilder : IObjectBuilder<V1CustomResourceDefinitionVersion>
     {
-        var b = new ObjectBuilder<V1CustomResourceValidation>();
-        var s = new ObjectBuilder<V1JSONSchemaProps>();
+        var b = ObjectBuilder.Create<V1CustomResourceValidation>();
+        var s = ObjectBuilder.Create<V1JSONSchemaProps>();
         schema(s);
 
         builder.Add(x =>
@@ -316,7 +316,7 @@ public static partial class CustomResourceDefinitionBuilderExtensions
         if (type.IsArray)
         {
             var elementType = type.GetElementType()!;
-            var itemSchema = new ObjectBuilder<V1JSONSchemaProps>();
+            var itemSchema = ObjectBuilder.Create<V1JSONSchemaProps>();
             itemSchema.OfType(elementType);
 
             builder.Add(x =>
@@ -336,7 +336,7 @@ public static partial class CustomResourceDefinitionBuilderExtensions
              type.GetGenericTypeDefinition() == typeof(IEnumerable<>)))
         {
             var elementType = type.GetGenericArguments()[0];
-            var itemSchema = new ObjectBuilder<V1JSONSchemaProps>();
+            var itemSchema = ObjectBuilder.Create<V1JSONSchemaProps>();
             itemSchema.OfType(elementType);
 
             builder.Add(x =>
@@ -382,7 +382,7 @@ public static partial class CustomResourceDefinitionBuilderExtensions
     public static TBuilder WithProperty<TBuilder>(this TBuilder builder, string name, Action<IObjectBuilder<V1JSONSchemaProps>> schema)
         where TBuilder : IObjectBuilder<V1JSONSchemaProps>
     {
-        var p = new ObjectBuilder<V1JSONSchemaProps>();
+        var p = ObjectBuilder.Create<V1JSONSchemaProps>();
         schema(p);
 
         builder.Add(x =>

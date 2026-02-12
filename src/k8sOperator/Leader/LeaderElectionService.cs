@@ -9,7 +9,7 @@ public class LeaderElectionService(IKubernetes kubernetes, LeaderElectionOptions
 {
     private readonly LeaderElectionOptions _options = options;
     private readonly string _identity = $"{Environment.MachineName}-{Guid.NewGuid()}";
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private Task? _renewalTask;
     private TaskCompletionSource _leadershipAcquired = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private TaskCompletionSource _leadershipLost = new(TaskCreationOptions.RunContinuationsAsynchronously);

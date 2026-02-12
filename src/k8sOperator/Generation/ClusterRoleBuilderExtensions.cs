@@ -14,7 +14,7 @@ public static class ClusterRoleBuilderExtensions
     /// <returns>A builder for configuring the policy rule.</returns>
     public static IObjectBuilder<V1PolicyRule> AddRule(this IObjectBuilder<V1ClusterRole> builder)
     {
-        var b = new ObjectBuilder<V1PolicyRule>();
+        var b = ObjectBuilder.Create<V1PolicyRule>();
         builder.Add(x =>
         {
             x.Rules ??= [];

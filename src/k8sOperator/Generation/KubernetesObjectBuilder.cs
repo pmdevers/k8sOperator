@@ -21,12 +21,19 @@ public interface IObjectBuilder<out T>
     T Build();
 }
 
-internal class ObjectBuilder<T> : IObjectBuilder<T>
-    where T : new()
+
+public static class ObjectBuilder
+{
+    public static ObjectBuilder<TResource> Create<TResource>()
+        where TResource : new()
+    {
+        return new ObjectBuilder<TResource>(new());
+    }
+}
+
+public class ObjectBuilder<T>(T instance) : IObjectBuilder<T>
 {
     private readonly List<Action<T>> _actions = [];
-
-    public static IObjectBuilder<T> Create() => new ObjectBuilder<T>();
 
     public IObjectBuilder<T> Add(Action<T> action)
     {
@@ -36,7 +43,7 @@ internal class ObjectBuilder<T> : IObjectBuilder<T>
 
     public virtual T Build()
     {
-        var o = new T();
+        var o = instance;
 
         foreach (var action in _actions)
         {
@@ -57,13 +64,25 @@ public static class KubernetesObjectBuilder
     public static IObjectBuilder<T> Create<T>()
         where T : IKubernetesObject, new()
     {
-        return new ObjectBuilder<T>().Add(x => x.Initialize());
+        return Create(new T());
+    }
+
+    public static IObjectBuilder<T> Create<T>(T instance)
+        where T : IKubernetesObject
+    {
+        return new ObjectBuilder<T>(instance).Add(x => x.Initialize());
     }
 
     public static IObjectBuilder<T> CreateMeta<T>()
         where T : IMetadata<V1ObjectMeta>, new()
     {
-        return new ObjectBuilder<T>()
+        return CreateMeta(new T());
+    }
+
+    public static IObjectBuilder<T> CreateMeta<T>(T instance)
+        where T : IMetadata<V1ObjectMeta>
+    {
+        return new ObjectBuilder<T>(instance)
             .Add(x =>
             {
                 if (x is IKubernetesObject o)

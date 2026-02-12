@@ -31,7 +31,7 @@ public class InstallCommand(OperatorConfiguration config, ControllerDatasource d
         var clusterrole = CreateClusterRole(config, watchers);
         var clusterrolebinding = CreateClusterRoleBinding(config);
 
-        var deployment = CreateDeployment(config, options.Deployment);
+        var deployment = CreateDeployment(config);
 
         foreach (var item in watchers)
         {

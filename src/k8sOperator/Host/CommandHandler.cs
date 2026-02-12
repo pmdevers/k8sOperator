@@ -4,21 +4,12 @@ using Microsoft.Extensions.Hosting;
 
 namespace k8s.Operator.Host;
 
-public class CommandHandler
+public class CommandHandler(IHost host, CommandRegistry registry)
 {
-    private readonly IHost _host;
-    private readonly CommandRegistry _registry;
-
-    public CommandHandler(IHost host, CommandRegistry registry)
-    {
-        _host = host;
-        _registry = registry;
-    }
-
     public async Task<int> HandleAsync(string[] args)
     {
         var command = args.Length > 0 ? args[0] : "help";
-        var commandType = _registry.GetCommandType(command);
+        var commandType = registry.GetCommandType(command);
 
         if (commandType == null)
         {
@@ -26,7 +17,7 @@ public class CommandHandler
             Console.WriteLine();
 
             // Show help
-            var helpType = _registry.GetCommandType("help");
+            var helpType = registry.GetCommandType("help");
             if (helpType != null)
             {
                 var helpCommand = CreateCommand(helpType);
@@ -54,18 +45,18 @@ public class CommandHandler
         // Special handling for HelpCommand to inject command types
         if (commandType == typeof(HelpCommand))
         {
-            return new HelpCommand(_host, _registry.GetAllCommandTypes());
+            return new HelpCommand(host, registry.GetAllCommandTypes());
         }
 
         // Use DI to create the command
         try
         {
-            return (IOperatorCommand)ActivatorUtilities.CreateInstance(_host.Services, commandType);
+            return (IOperatorCommand)ActivatorUtilities.CreateInstance(host.Services, commandType);
         }
         catch
         {
             // If that fails, try with IHost as parameter (for OperatorCommand)
-            return (IOperatorCommand)ActivatorUtilities.CreateInstance(_host.Services, commandType, _host);
+            return (IOperatorCommand)ActivatorUtilities.CreateInstance(host.Services, commandType, host);
         }
     }
 }

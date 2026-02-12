@@ -13,7 +13,7 @@ public static class LeaseBuilderExtensions
         /// <returns>The configured builder.</returns>
         public IObjectBuilder<V1LeaseSpec> WithSpecs()
         {
-            var specBuilder = new ObjectBuilder<V1LeaseSpec>();
+            var specBuilder = ObjectBuilder.Create<V1LeaseSpec>();
             builder.Add(x => x.Spec = specBuilder.Build());
             return specBuilder;
         }

@@ -33,7 +33,7 @@ public static partial class ProviderReconciler
             {
                 x.Status ??= new Provider.State();
                 x.Status.NumberOfReleases = dirs.Count;
-                x.Status.Versions = dirs.TakeLast(10).ToArray();
+                x.Status.Versions = [.. dirs.TakeLast(10)];
             })
             .ApplyAsync();
         }
