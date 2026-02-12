@@ -27,13 +27,24 @@ public static class ObjectBuilder
     public static ObjectBuilder<TResource> Create<TResource>()
         where TResource : new()
     {
-        return new ObjectBuilder<TResource>(new());
+        return Create<TResource>(new());
+    }
+
+    public static ObjectBuilder<TResource> Create<TResource>(TResource instance)
+    {
+        return new ObjectBuilder<TResource>(instance);
     }
 }
 
-public class ObjectBuilder<T>(T instance) : IObjectBuilder<T>
+public class ObjectBuilder<T> : IObjectBuilder<T>
 {
+    internal ObjectBuilder(T instance)
+    {
+        _instance = instance;
+    }
+
     private readonly List<Action<T>> _actions = [];
+    private readonly T _instance;
 
     public IObjectBuilder<T> Add(Action<T> action)
     {
@@ -43,7 +54,7 @@ public class ObjectBuilder<T>(T instance) : IObjectBuilder<T>
 
     public virtual T Build()
     {
-        var o = instance;
+        var o = _instance;
 
         foreach (var action in _actions)
         {
