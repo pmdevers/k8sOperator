@@ -151,14 +151,12 @@ public class InstallCommand(OperatorConfiguration config, ControllerDatasource d
                                 limits: x =>
                                 {
                                     x.Add("cpu", new ResourceQuantity("100m"));
-                                    x.Add("memory", new ResourceQuantity("128Mi"));
+                                    x.Add("memory", new ResourceQuantity("1Gi"));
                                 },
                                 requests: x =>
                                 {
                                     x.Add("cpu", new ResourceQuantity("100m"));
-
-
-                                    x.Add("memory", new ResourceQuantity("64Mi"));
+                                    x.Add("memory", new ResourceQuantity("512Mi"));
                                 }
                             ));
 
