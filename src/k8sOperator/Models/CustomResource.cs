@@ -1,4 +1,5 @@
 ﻿using k8s.Models;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
 namespace k8s.Operator.Models;
@@ -6,6 +7,7 @@ namespace k8s.Operator.Models;
 /// <summary>
 /// Represents a custom resource in Kubernetes, inheriting from <see cref="KubernetesObject"/> and implementing <see cref="IKubernetesObject{V1ObjectMeta}"/>.
 /// </summary>
+[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
 public abstract class CustomResource : KubernetesObject, IKubernetesObject<V1ObjectMeta>
 {
     /// <inheritdoc />

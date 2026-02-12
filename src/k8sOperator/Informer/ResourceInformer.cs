@@ -2,6 +2,7 @@
 using k8s.Operator;
 using k8s.Operator.Cache;
 using k8s.Operator.Models;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
@@ -9,7 +10,7 @@ using System.Threading.Channels;
 
 namespace k8s.Operator.Informer;
 
-internal class ResourceInformer<TResource>(
+internal class ResourceInformer<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] TResource>(
     IKubernetes client,
     string? ns,
     IResourceCache<TResource> cache,

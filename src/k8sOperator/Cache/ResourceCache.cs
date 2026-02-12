@@ -10,16 +10,16 @@ internal class ResourceCache<TResource> : IResourceCache<TResource>
 
     public IReadOnlyList<TResource> List() => [.. _items.Values];
 
-    public void Apply(WatchEvent<TResource> e)
+    public void Apply(WatchEvent<TResource> watcher)
     {
-        switch (e.Type)
+        switch (watcher.Type)
         {
             case WatchEventType.Added:
             case WatchEventType.Modified:
-                AddOrUpdate(e.Object);
+                AddOrUpdate(watcher.Object);
                 break;
             case WatchEventType.Deleted:
-                Remove(e.Object);
+                Remove(watcher.Object);
                 break;
         }
     }

@@ -5,6 +5,7 @@ using k8s.Operator.Models;
 using k8s.Operator.Queue;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -12,7 +13,7 @@ namespace k8s.Operator.Builders;
 
 public delegate Task ReconcileDelegate(OperatorContext context);
 
-public class ControllerBuilder(IServiceProvider serviceProvider, Type resourceType)
+public class ControllerBuilder(IServiceProvider serviceProvider, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicMethods)] Type resourceType)
 {
     public IServiceProvider ServiceProvider { get; } = serviceProvider;
 
@@ -28,6 +29,9 @@ public class ControllerBuilder(IServiceProvider serviceProvider, Type resourceTy
         return this;
     }
 
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "OperatorController<T> type is preserved via CustomResource attribute")]
+    [UnconditionalSuppressMessage("Trimming", "IL2055", Justification = "OperatorController<T> constructor is preserved")]
+    [UnconditionalSuppressMessage("Trimming", "IL2087", Justification = "ILogger<T> is preserved by DI container")]
     public IController Build()
     {
         ArgumentNullException.ThrowIfNull(Handler);
@@ -151,7 +155,7 @@ public static class DelegateFactory
         };
     }
 
-    private static Expression CreateMethodCall(MethodInfo method, ConstantExpression target, DelegateFactoryContext factoryContext)
+    private static MethodCallExpression CreateMethodCall(MethodInfo method, ConstantExpression target, DelegateFactoryContext factoryContext)
         => target is null
             ? Expression.Call(method, factoryContext.ArgumentExpressions!)
             : Expression.Call(target, method, factoryContext.ArgumentExpressions!);
@@ -185,6 +189,8 @@ public static class DelegateFactory
         return arguments;
     }
 
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "GetRequiredService method is preserved by framework")]
+    [UnconditionalSuppressMessage("Trimming", "IL2060", Justification = "MakeGenericMethod on GetRequiredService is safe - parameter types are preserved")]
     private static Expression CreateArgument(ParameterInfo parameter, DelegateFactoryContext factoryContext)
     {
         if (parameter.Name is null)
@@ -205,8 +211,6 @@ public static class DelegateFactory
 
             throw new NotSupportedException($"Parameter '{parameter.Name}' has '{attribute}' modifier, which is not supported.");
         }
-
-        var attributes = parameter.GetCustomAttributes();
 
         if (parameter.ParameterType == typeof(OperatorContext))
         {

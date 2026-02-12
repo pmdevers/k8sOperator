@@ -254,7 +254,7 @@ public class UpdateCommand(OperatorConfiguration config) : IOperatorCommand
         {
             var extractPath = Path.Combine(Path.GetTempPath(), $"k8sOperator-{Guid.NewGuid()}");
             Directory.CreateDirectory(extractPath);
-            ZipFile.ExtractToDirectory(tempFile, extractPath);
+            await ZipFile.ExtractToDirectoryAsync(tempFile, extractPath);
 
             // Find the executable in the extracted files
             var executableName = Path.GetFileName(currentExecutable);

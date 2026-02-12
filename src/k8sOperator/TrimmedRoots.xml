@@ -8,5 +8,21 @@
     <!-- Preserve attributes used for CRD schema generation -->
     <type fullname="k8s.Operator.Generation.Attributes.PatternAttribute" preserve="all" />
     <type fullname="k8s.Operator.Generation.Attributes.DefaultAttribute" preserve="all" />
+    
+    <!-- Preserve KubernetesEntityAttribute used by informers -->
+    <type fullname="k8s.KubernetesEntityAttribute" preserve="all" />
+    
+    <!-- Preserve leader election service types for dynamic instantiation -->
+    <type fullname="k8s.Operator.Leader.LeaderElectionService" preserve="all" />
+    <type fullname="k8s.Operator.Leader.NoopLeaderElectionService" preserve="all" />
+    <type fullname="k8s.Operator.Leader.NeverLeaderElectionService" preserve="all" />
+    
+    <!-- Preserve OperatorController for dynamic instantiation -->
+    <type fullname="k8s.Operator.Controller.OperatorController`1" preserve="all" />
+    
+    <!-- Preserve assembly metadata attributes -->
+    <type fullname="k8s.Operator.Metadata.OperatorNameAttribute" preserve="all" />
+    <type fullname="k8s.Operator.Metadata.NamespaceAttribute" preserve="all" />
+    <type fullname="k8s.Operator.Metadata.DockerImageAttribute" preserve="all" />
   </assembly>
 </linker>

@@ -11,6 +11,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace k8s.Operator;
@@ -101,6 +102,7 @@ public static class OperatorExtensions
                     LeaderElectionType.Never => typeof(NeverLeaderElectionService),
                     _ => typeof(NoopLeaderElectionService)
                 };
+                // These types are explicitly preserved in TrimmedRoots.xml
                 return (ILeaderElectionService)ActivatorUtilities.CreateInstance(sp, type);
             });
 

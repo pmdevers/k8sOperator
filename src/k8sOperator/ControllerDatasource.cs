@@ -6,7 +6,7 @@ namespace k8s.Operator;
 
 public class ControllerDatasource(IServiceProvider serviceProvider)
 {
-    private List<ResourceEntries> _resources = [];
+    private readonly List<ResourceEntries> _resources = [];
 
     public IServiceProvider ServiceProvider { get; } = serviceProvider;
 

@@ -141,7 +141,7 @@ public partial class OperatorController<TResource>(
         }
     }
 
-    private TimeSpan GetResyncInterval(TResource resource)
+    private static TimeSpan GetResyncInterval(TResource resource)
     {
         // Use reflection to get the Interval property from the Spec
         var specProperty = typeof(TResource).GetProperty("Spec");
