@@ -1,6 +1,0 @@
-spec: {}
-metadata:
-  name: provider
-  namespace: default
-apiVersion: frontman.io/v1alpha
-kind: Provider
