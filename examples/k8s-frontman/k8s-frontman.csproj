@@ -8,8 +8,10 @@
 
     <CreateOperatorLaunchSettings>true</CreateOperatorLaunchSettings>
     <GenerateOperatorDockerfile>true</GenerateOperatorDockerfile>
+    
     <PublishSingleFileExecutable>true</PublishSingleFileExecutable>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <InvariantGlobalization>true</InvariantGlobalization>
 
   </PropertyGroup>
 
