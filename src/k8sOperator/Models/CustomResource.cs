@@ -20,7 +20,7 @@ public abstract class CustomResource : KubernetesObject, IKubernetesObject<V1Obj
 /// Inherits from <see cref="CustomResource"/> and implements <see cref="ISpec{TSpec}"/>.
 /// </summary>
 /// <typeparam name="TSpec">The type of the specification.</typeparam>
-public abstract class CustomResource<TSpec> : CustomResource, ISpec<TSpec>
+public abstract class CustomResource<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] TSpec> : CustomResource, ISpec<TSpec>
     where TSpec : new()
 {
     /// <summary>
@@ -36,7 +36,9 @@ public abstract class CustomResource<TSpec> : CustomResource, ISpec<TSpec>
 /// </summary>
 /// <typeparam name="TSpec">The type of the specification.</typeparam>
 /// <typeparam name="TStatus">The type of the status.</typeparam>
-public abstract class CustomResource<TSpec, TStatus> : CustomResource<TSpec>, IStatus<TStatus?>
+public abstract class CustomResource<
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] TSpec, 
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] TStatus> : CustomResource<TSpec>, IStatus<TStatus?>
     where TSpec : new()
     where TStatus : class
 {
