@@ -1,5 +1,6 @@
 ﻿using k8s.Models;
 using k8s.Operator.Generation.Attributes;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace k8s.Operator.Generation;
@@ -248,7 +249,7 @@ public static partial class CustomResourceDefinitionBuilderExtensions
     /// <param name="nullable"></param>
     /// <returns>The configured builder.</returns>
     /// <exception cref="InvalidOperationException">Thrown when the provided type is not valid.</exception>
-    public static TBuilder OfType<TBuilder>(this TBuilder builder, Type type, bool? nullable = false, string? pattern = null, string? defaultValue = null)
+    public static TBuilder OfType<TBuilder>(this TBuilder builder, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type type, bool? nullable = false, string? pattern = null, string? defaultValue = null)
         where TBuilder : IObjectBuilder<V1JSONSchemaProps>
     {
         if (type.FullName == "System.String")
@@ -408,7 +409,7 @@ public static partial class CustomResourceDefinitionBuilderExtensions
     }
 
 
-    private static TBuilder ObjectType<TBuilder>(this TBuilder builder, Type type)
+    private static TBuilder ObjectType<TBuilder>(this TBuilder builder, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type type)
         where TBuilder : IObjectBuilder<V1JSONSchemaProps>
     {
         switch (type.FullName)

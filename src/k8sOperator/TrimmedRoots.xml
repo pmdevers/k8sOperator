@@ -4,5 +4,9 @@
     <type fullname="k8s.Operator.Host.Commands.*" preserve="all" />
     <type fullname="k8s.Operator.Host.IOperatorCommand" preserve="all" />
     <type fullname="k8s.Operator.Host.OperatorArgumentAttribute" preserve="all" />
+    
+    <!-- Preserve attributes used for CRD schema generation -->
+    <type fullname="k8s.Operator.Generation.Attributes.PatternAttribute" preserve="all" />
+    <type fullname="k8s.Operator.Generation.Attributes.DefaultAttribute" preserve="all" />
   </assembly>
 </linker>
