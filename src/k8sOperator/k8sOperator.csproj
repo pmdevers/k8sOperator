@@ -41,6 +41,7 @@
 
   <!-- Reference BuildTasks project -->
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" VersionOverride="10.0.3" />
     <ProjectReference Include="..\k8sOperator.BuildTasks\k8sOperator.BuildTasks.csproj" ReferenceOutputAssembly="false">
       <!-- Ensure build outputs are available for packing -->
       <PrivateAssets>all</PrivateAssets>
