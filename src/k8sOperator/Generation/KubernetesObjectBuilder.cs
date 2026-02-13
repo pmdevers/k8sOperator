@@ -63,6 +63,13 @@ public class ObjectBuilder<T> : IObjectBuilder<T>
 
         return o;
     }
+
+    public ObjectBuilder<T> For(T instance)
+    {
+        var clone = new ObjectBuilder<T>(instance);
+        clone._actions.AddRange(_actions);
+        return clone;
+    }
 }
 
 public static class KubernetesObjectBuilder

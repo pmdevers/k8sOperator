@@ -6,6 +6,7 @@
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/k8sOperator.BuildTasks/k8sOperator.BuildTasks.csproj" Id="2f253022-d64e-41f2-b70d-e57d873e70cb" />
+    <Project Path="src/k8sOperator.SourceGenerators/k8sOperator.SourceGenerators.csproj" />
     <Project Path="src/k8sOperator/k8sOperator.csproj" Id="d84c3fff-673a-4b05-9c92-950ffe42fdd4" />
   </Folder>
   <Folder Name="/test/">

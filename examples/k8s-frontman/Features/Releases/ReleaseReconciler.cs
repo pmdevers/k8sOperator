@@ -1,6 +1,7 @@
 ﻿using k8s.Frontman.Features.Providers;
 using k8s.Models;
 using k8s.Operator;
+using k8s.Operator.Generation;
 
 namespace k8s.Frontman.Features.Releases;
 
@@ -21,55 +22,56 @@ public static class ReleaseReconciler
 
         if (provider is null)
         {
-            await context.Update<Release>()
-            .WithStatus(x =>
+            await context.Update<Release>(x =>
             {
-                x.Status ??= new();
-                x.Status.Message = $"Provider '{newVersion.Spec.Provider}' not found.";
-
-
-            }).ApplyAsync();
+                x.WithStatus(x =>
+                {
+                    x.Message = $"Provider '{newVersion.Spec.Provider}' not found.";
+                });
+            });
 
             return;
         }
 
-        await context.Update<Release>()
-           .AddLabel("managed-by", context.Configuration.Name)
-           .AddLabel("processed", "true")
-           .AddLabel($"{newVersion.ApiGroup()}/provider", newVersion.Spec.Provider)
-           .AddAnnotation("last-reconcile", DateTime.UtcNow.ToString("o"))
-           .ApplyAsync();
+        await context.Update<Release>(x =>
+        {
+            x.WithLabel("managed-by", context.Configuration.Name);
+            x.WithLabel("processed", "true");
+            x.WithLabel($"{newVersion.ApiGroup()}/provider", newVersion.Spec.Provider);
+            x.WithAnnotation("last-reconcile", DateTime.UtcNow.ToString("o"));
+        });
 
         if (!provider.Status!.Versions.Contains(newVersion.Spec.Version))
         {
-            await context.Update<Release>()
-            .WithStatus(x =>
+            await context.Update<Release>(x =>
             {
-                x.Status ??= new();
-                x.Status.Message = $"Version '{newVersion.Spec.Version}' not found.";
-                if (current?.Status?.CurrentVersion != newVersion.Spec.Version)
+                x.WithStatus(x =>
                 {
-                    x.Status.PreviousVersion = current?.Status?.CurrentVersion ?? string.Empty;
-                }
-            }).ApplyAsync();
+                    x.Message = $"Version '{newVersion.Spec.Version}' not found.";
+                    if (current?.Status?.CurrentVersion != newVersion.Spec.Version)
+                    {
+                        x.PreviousVersion = current?.Status?.CurrentVersion ?? string.Empty;
+                    }
+                });
+            });
 
             await context.Queue.Requeue(context.ResourceKey, TimeSpan.FromSeconds(30), context.CancellationToken);
 
             return;
         }
 
-        await context.Update<Release>()
-            .WithStatus(x =>
+        await context.Update<Release>(x =>
+        {
+            x.WithStatus(x =>
             {
-                x.Status ??= new();
-
                 if (current?.Status?.CurrentVersion != newVersion.Spec.Version)
                 {
-                    x.Status.PreviousVersion = current?.Status?.CurrentVersion ?? string.Empty;
+                    x.PreviousVersion = current?.Status?.CurrentVersion ?? string.Empty;
                 }
 
-                x.Status.CurrentVersion = newVersion.Spec.Version;
-                x.Status.Message = string.Empty;
-            }).ApplyAsync();
+                x.CurrentVersion = newVersion.Spec.Version;
+                x.Message = string.Empty;
+            });
+        });
     }
 }

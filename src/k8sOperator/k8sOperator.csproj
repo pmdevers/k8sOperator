@@ -24,6 +24,12 @@
     <PackageReference Include="KubernetesClient" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
+    
+    <!-- Reference the source generator as an analyzer -->
+    <ProjectReference Include="..\k8sOperator.SourceGenerators\k8sOperator.SourceGenerators.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false"
+                      PrivateAssets="none" />
   </ItemGroup>
 
   <!-- Pack Operator.targets for NuGet consumers (both direct and transitive) -->
@@ -41,7 +47,7 @@
       <IncludeAssets>none</IncludeAssets>
     </ProjectReference>
   </ItemGroup>
-
+  
   <!-- Pack BuildTasks assembly and all dependencies -->
   <!-- This target runs after BuildTasks is built but before creating the package -->
   <Target Name="IncludeBuildTasksInPackage" BeforeTargets="_GetPackageFiles" DependsOnTargets="ResolveProjectReferences">
@@ -59,6 +65,22 @@
       <None Include="@(_BuildTasksDlls)">
         <Pack>true</Pack>
         <PackagePath>buildTransitive\netstandard2.0\%(Filename)%(Extension)</PackagePath>
+      </None>
+    </ItemGroup>
+  </Target>
+
+  <!-- Pack the source generator for consumers -->
+  <Target Name="IncludeSourceGeneratorInPackage" BeforeTargets="_GetPackageFiles" DependsOnTargets="ResolveProjectReferences">
+    <ItemGroup>
+      <!-- Get the source generator DLL -->
+      <_SourceGeneratorDll Include="..\k8sOperator.SourceGenerators\bin\$(Configuration)\netstandard2.0\k8sOperator.SourceGenerators.dll" />
+    </ItemGroup>
+
+    <!-- Add to analyzers folder in the package -->
+    <ItemGroup>
+      <None Include="@(_SourceGeneratorDll)">
+        <Pack>true</Pack>
+        <PackagePath>analyzers\dotnet\cs\%(Filename)%(Extension)</PackagePath>
       </None>
     </ItemGroup>
   </Target>

@@ -3,4 +3,11 @@
   <!-- This ensures build tasks run during development with project references -->
   <Import Project="..\src\k8sOperator\k8sOperator.targets" 
           Condition="Exists('..\src\k8sOperator\k8sOperator.targets')" />
+
+	<ItemGroup>
+		<!-- Add direct reference to source generator for development -->
+		<ProjectReference Include="..\..\src\k8sOperator.SourceGenerators\k8sOperator.SourceGenerators.csproj"
+							OutputItemType="Analyzer"
+							ReferenceOutputAssembly="false" />
+	</ItemGroup>
 </Project>

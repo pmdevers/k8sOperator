@@ -14,9 +14,5 @@
     <ProjectReference Include="..\..\src\k8sOperator\k8sOperator.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Properties\" />
-  </ItemGroup>
-
 </Project>
 

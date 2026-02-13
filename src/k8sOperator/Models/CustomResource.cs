@@ -1,5 +1,6 @@
 ﻿using k8s.Models;
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using System.Text.Json.Serialization;
 
 namespace k8s.Operator.Models;
@@ -10,6 +11,13 @@ namespace k8s.Operator.Models;
 [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
 public abstract class CustomResource : KubernetesObject, IKubernetesObject<V1ObjectMeta>
 {
+    public static KubernetesEntityAttribute GetDefinition<TResource>()
+        where TResource : CustomResource
+    {
+        return typeof(TResource).GetCustomAttribute<KubernetesEntityAttribute>() ??
+            throw new InvalidOperationException($"KubernetesEntityAttribute is not defined on {typeof(TResource).FullName}");
+    }
+
     /// <inheritdoc />
     [JsonPropertyName("metadata")]
     public V1ObjectMeta Metadata { get; set; } = new V1ObjectMeta();
@@ -37,7 +45,7 @@ public abstract class CustomResource<[DynamicallyAccessedMembers(DynamicallyAcce
 /// <typeparam name="TSpec">The type of the specification.</typeparam>
 /// <typeparam name="TStatus">The type of the status.</typeparam>
 public abstract class CustomResource<
-    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] TSpec, 
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] TSpec,
     [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] TStatus> : CustomResource<TSpec>, IStatus<TStatus?>
     where TSpec : new()
     where TStatus : class
