@@ -1,0 +1,9 @@
+    public static UpdateBuilder<{{CLASS_NAME}}> WithSpec(this UpdateBuilder<{{CLASS_NAME}}> builder, Action<{{CLASS_NAME}}.{{SPEC_TYPE_NAME}}> configure)
+    {
+        builder.Add(x =>
+        {
+            x.Spec ??= new {{CLASS_NAME}}.{{SPEC_TYPE_NAME}}();
+            configure(x.Spec);
+        });
+        return builder;
+    }

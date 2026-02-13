@@ -14,7 +14,8 @@ public abstract class CustomResource : KubernetesObject, IKubernetesObject<V1Obj
     public static KubernetesEntityAttribute GetDefinition<TResource>()
         where TResource : CustomResource
     {
-        return typeof(TResource).GetCustomAttribute<KubernetesEntityAttribute>()!;
+        return typeof(TResource).GetCustomAttribute<KubernetesEntityAttribute>() ??
+            throw new InvalidOperationException($"KubernetesEntityAttribute is not defined on {typeof(TResource).FullName}");
     }
 
     /// <inheritdoc />

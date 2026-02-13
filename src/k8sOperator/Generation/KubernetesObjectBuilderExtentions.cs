@@ -31,7 +31,7 @@ public static class KubernetesObjectBuilderExtentions
             builder.Add(x =>
             {
                 x.Metadata.Annotations ??= new Dictionary<string, string>();
-                x.Metadata.Annotations.Add(key, value);
+                x.Metadata.Annotations[key] = value;
             });
             return builder;
         }
@@ -40,7 +40,7 @@ public static class KubernetesObjectBuilderExtentions
             builder.Add(x =>
             {
                 x.Metadata.Labels ??= new Dictionary<string, string>();
-                x.Metadata.Labels.Add(key, value);
+                x.Metadata.Labels[key] = value;
             });
             return builder;
         }

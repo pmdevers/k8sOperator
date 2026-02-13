@@ -1,5 +1,4 @@
-﻿using k8s.Operator;
-using k8s.Operator.Controller;
+﻿using k8s.Operator.Controller;
 using k8s.Operator.Informer;
 using k8s.Operator.Models;
 using k8s.Operator.Queue;

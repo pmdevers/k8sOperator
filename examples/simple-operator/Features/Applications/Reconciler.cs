@@ -52,20 +52,3 @@ public static class Reconciler
             resource.Metadata.Name, resource.Status?.ReadyReplicas);
     }
 }
-
-
-public static class MyAppExtensions
-{
-    extension(IObjectBuilder<MyApp> builder)
-    {
-        public IObjectBuilder<MyApp> WithStatus(Action<MyApp.MyAppStatus> status)
-        {
-            builder.Add(x =>
-            {
-                x.Status ??= new();
-                status(x.Status);
-            });
-            return builder;
-        }
-    }
-}

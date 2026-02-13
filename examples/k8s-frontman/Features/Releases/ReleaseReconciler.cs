@@ -75,35 +75,3 @@ public static class ReleaseReconciler
         });
     }
 }
-
-
-public static class ReleaseExtensions
-{
-    extension(UpdateBuilder<Release> builder)
-    {
-        public UpdateBuilder<Release> WithStatus(Action<Release.State> state)
-        {
-            builder.StatusChanged = true;
-            builder.Add(x =>
-            {
-                x.Status ??= new();
-                state(x.Status);
-            });
-            return builder;
-        }
-    }
-
-    extension(UpdateBuilder<Provider> builder)
-    {
-        public UpdateBuilder<Provider> WithStatus(Action<Provider.State> state)
-        {
-            builder.StatusChanged = true;
-            builder.Add(x =>
-            {
-                x.Status ??= new();
-                state(x.Status);
-            });
-            return builder;
-        }
-    }
-}

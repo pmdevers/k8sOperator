@@ -29,13 +29,11 @@ public static class Reconciler
         if (resource.Status is null || resource.Status.ReconciliationCount == 0)
             await context.Update<TodoItem>(x =>
             {
-                x.StatusChanged = true;
-                x.Add(x =>
+                x.WithStatus(x =>
                 {
-                    x.Status ??= new();
-                    x.Status.State = "in-progress";
-                    x.Status.Message = "Todo item is being processed.";
-                    x.Status.ReconciliationCount++;
+                    x.State = "in-progress";
+                    x.Message = "Todo item is being processed.";
+                    x.ReconciliationCount++;
                 });
             });
 
@@ -43,27 +41,20 @@ public static class Reconciler
         {
             await context.Update<TodoItem>(x =>
             {
-                x.StatusChanged = true;
-                x.Add(x =>
-                    {
-                        x.Status ??= new();
-                        x.Status.State = "completed";
-                        x.Status.CompletedAt = DateTime.UtcNow;
-                        x.Status.Message = "Todo item has been completed.";
-                        x.Status.ReconciliationCount++;
-                    });
+                x.WithStatus(x =>
+                {
+                    x.State = "completed";
+                    x.CompletedAt = DateTime.UtcNow;
+                    x.Message = "Todo item has been completed.";
+                    x.ReconciliationCount++;
+                });
             });
         }
         else
         {
             await context.Update<TodoItem>(x =>
             {
-                x.StatusChanged = true;
-                x.Add(x =>
-                        {
-                            x.Status ??= new();
-                            x.Status.Message = $"Todo item has been reconciled {resource.Status?.ReconciliationCount} times.";
-                        });
+                x.WithStatus(x => x.Message = $"Todo item has been reconciled {resource.Status?.ReconciliationCount} times.");
             });
         }
 

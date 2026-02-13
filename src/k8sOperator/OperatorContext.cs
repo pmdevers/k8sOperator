@@ -58,7 +58,7 @@ public class OperatorContext(IServiceProvider serviceProvider)
         }
 
         await _kubernetes.CustomObjects.ReplaceNamespacedCustomObjectAsync<TResource>(
-            body: update,
+            body: updated,
             group: crd.Group,
             version: crd.ApiVersion,
             plural: crd.PluralName,
