@@ -27,43 +27,50 @@ public static class Reconciler
 
 
         if (resource.Status is null || resource.Status.ReconciliationCount == 0)
-            await context.Update<TodoItem>()
-                .WithStatus(x =>
+            await context.Update<TodoItem>(x =>
+            {
+                x.StatusChanged = true;
+                x.Add(x =>
                 {
                     x.Status ??= new();
                     x.Status.State = "in-progress";
                     x.Status.Message = "Todo item is being processed.";
                     x.Status.ReconciliationCount++;
-                })
-                .ApplyAsync();
+                });
+            });
 
         if (resource.Status?.ReconciliationCount <= 3)
         {
-            await context.Update<TodoItem>()
-                    .WithStatus(x =>
+            await context.Update<TodoItem>(x =>
+            {
+                x.StatusChanged = true;
+                x.Add(x =>
                     {
                         x.Status ??= new();
                         x.Status.State = "completed";
                         x.Status.CompletedAt = DateTime.UtcNow;
                         x.Status.Message = "Todo item has been completed.";
                         x.Status.ReconciliationCount++;
-                    })
-                    .ApplyAsync();
+                    });
+            });
         }
         else
         {
-            await context.Update<TodoItem>()
-                    .WithStatus(x =>
-                    {
-                        x.Status ??= new();
-                        x.Status.Message = $"Todo item has been reconciled {resource.Status?.ReconciliationCount} times.";
-                    })
-                    .ApplyAsync();
+            await context.Update<TodoItem>(x =>
+            {
+                x.StatusChanged = true;
+                x.Add(x =>
+                        {
+                            x.Status ??= new();
+                            x.Status.Message = $"Todo item has been reconciled {resource.Status?.ReconciliationCount} times.";
+                        });
+            });
         }
 
+
         logger.LogInformation("Updated status for TodoItem {Name}: State={State}, Message={Message}",
-            resource.Metadata.Name,
-            resource.Status?.State,
-            resource.Status?.Message);
+        resource.Metadata.Name,
+        resource.Status?.State,
+        resource.Status?.Message);
     }
 }

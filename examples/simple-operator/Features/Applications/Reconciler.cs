@@ -1,4 +1,5 @@
 ﻿using k8s.Operator;
+using k8s.Operator.Generation;
 
 namespace simple_operator.Features.ManageApplication;
 
@@ -33,23 +34,38 @@ public static class Reconciler
         var allApps = informer.List();
         logger.LogInformation("Total apps in cache: {Count}", allApps.Count);
 
-        await context.Update<MyApp>()
-            .AddLabel("managed-by", "simple-operator")
-            .AddLabel("processed", "true")
-            .AddAnnotation("last-reconcile", DateTime.UtcNow.ToString("o"))
-            .ApplyAsync();
+        await context.Update<MyApp>(x =>
+        {
+            x.WithLabel("managed-by", "simple-operator");
+            x.WithLabel("processed", "true");
+            x.WithLabel("last-reconcile", DateTime.UtcNow.ToString("o"));
+        });
 
-        await context.Update<MyApp>()
-            .WithStatus(x =>
+        await context.Update<MyApp>(x =>
+            x.WithStatus(x =>
             {
-                x.Status ??= new MyApp.MyAppStatus();
-                x.Status.Phase = "Reconciling";
-                x.Status.ReadyReplicas = resource.Spec?.Replicas ?? 0;
-            })
-            .ApplyAsync();
-
+                x.Phase = "Reconciling";
+                x.ReadyReplicas = resource.Spec?.Replicas ?? 0;
+            }));
 
         logger.LogInformation("Reconciled MyApp {Name}, replicas: {Replicas}",
             resource.Metadata.Name, resource.Status?.ReadyReplicas);
+    }
+}
+
+
+public static class MyAppExtensions
+{
+    extension(IObjectBuilder<MyApp> builder)
+    {
+        public IObjectBuilder<MyApp> WithStatus(Action<MyApp.MyAppStatus> status)
+        {
+            builder.Add(x =>
+            {
+                x.Status ??= new();
+                status(x.Status);
+            });
+            return builder;
+        }
     }
 }

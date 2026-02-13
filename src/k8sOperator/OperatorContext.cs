@@ -1,6 +1,5 @@
-﻿using k8s.Operator;
-using k8s.Operator.Builders;
-using k8s.Operator.Configuration;
+﻿using k8s.Operator.Configuration;
+using k8s.Operator.Generation;
 using k8s.Operator.Informer;
 using k8s.Operator.Models;
 using k8s.Operator.Queue;
@@ -28,9 +27,49 @@ public class OperatorContext(IServiceProvider serviceProvider)
         return _informerFactory.GetInformer<TResource>();
     }
 
-    public ResourceUpdateBuilder<TResource> Update<TResource>()
+    public async Task Update<TResource>(Action<UpdateBuilder<TResource>> update)
         where TResource : CustomResource
     {
-        return new ResourceUpdateBuilder<TResource>(Kubernetes, (TResource)Resource!);
+        var crd = CustomResource.GetDefinition<TResource>();
+
+        // Get the LATEST version from the API server (not cache)
+        var latest = await _kubernetes.CustomObjects.GetNamespacedCustomObjectAsync<TResource>(
+            group: crd.Group,
+            version: crd.ApiVersion,
+            namespaceParameter: Resource.Metadata.NamespaceProperty,
+            plural: crd.PluralName,
+            name: Resource.Metadata.Name,
+            cancellationToken: CancellationToken);
+
+        var builder = new UpdateBuilder<TResource>(latest);
+        update(builder);
+        var updated = builder.Build();
+
+        if (builder.StatusChanged)
+        {
+            await _kubernetes.CustomObjects.ReplaceNamespacedCustomObjectStatusAsync(
+                body: updated,
+                group: crd.Group,
+                version: crd.ApiVersion,
+                namespaceParameter: Resource.Metadata.NamespaceProperty,
+                plural: crd.PluralName,
+                name: Resource.Metadata.Name,
+                cancellationToken: CancellationToken);
+        }
+
+        await _kubernetes.CustomObjects.ReplaceNamespacedCustomObjectAsync<TResource>(
+            body: update,
+            group: crd.Group,
+            version: crd.ApiVersion,
+            plural: crd.PluralName,
+            name: updated.Metadata.Name,
+            namespaceParameter: updated.Metadata.NamespaceProperty,
+            cancellationToken: CancellationToken);
     }
+}
+
+public class UpdateBuilder<TResource>(TResource resource) : ObjectBuilder<TResource>(resource)
+    where TResource : CustomResource
+{
+    public bool StatusChanged { get; set; } = false;
 }

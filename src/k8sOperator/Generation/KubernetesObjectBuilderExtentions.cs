@@ -7,56 +7,63 @@ namespace k8s.Operator.Generation;
 /// </summary>
 public static class KubernetesObjectBuilderExtentions
 {
-    /// <summary>
-    /// Sets the name of the Kubernetes object.
-    /// </summary>
-    /// <typeparam name="T">The type of the Kubernetes object.</typeparam>
-    /// <param name="builder">The builder instance.</param>
-    /// <param name="name">The name to assign to the Kubernetes object.</param>
-    /// <returns>The configured builder.</returns>
-    public static IObjectBuilder<T> WithName<T>(this IObjectBuilder<T> builder, string name)
+    extension<T>(IObjectBuilder<T> builder)
         where T : IMetadata<V1ObjectMeta>
     {
-        builder.Add(x =>
+        public IObjectBuilder<T> WithName(string name)
         {
-            x.Metadata.Name = name;
-        });
-        return builder;
-    }
+            builder.Add(x =>
+            {
+                x.Metadata.Name = name;
+            });
+            return builder;
+        }
+        public IObjectBuilder<T> WithNamespace(string ns)
+        {
+            builder.Add(x =>
+            {
+                x.Metadata.SetNamespace(ns);
+            });
+            return builder;
+        }
+        public IObjectBuilder<T> WithAnnotation(string key, string value)
+        {
+            builder.Add(x =>
+            {
+                x.Metadata.Annotations ??= new Dictionary<string, string>();
+                x.Metadata.Annotations.Add(key, value);
+            });
+            return builder;
+        }
+        public IObjectBuilder<T> WithLabel(string key, string value)
+        {
+            builder.Add(x =>
+            {
+                x.Metadata.Labels ??= new Dictionary<string, string>();
+                x.Metadata.Labels.Add(key, value);
+            });
+            return builder;
+        }
+        public IObjectBuilder<T> WithFinalizer(string finalizer)
+        {
+            builder.Add(x =>
+            {
+                x.Metadata.Finalizers ??= [];
+                if (!x.Metadata.Finalizers.Contains(finalizer))
+                {
+                    x.Metadata.Finalizers.Add(finalizer);
+                }
+            });
+            return builder;
+        }
+        public IObjectBuilder<T> RemoveFinalizer(string finalizer)
+        {
+            builder.Add(x =>
+            {
+                x.Metadata.Finalizers?.Remove(finalizer);
+            });
+            return builder;
+        }
 
-    /// <summary>
-    /// Sets the namespace of the kubernetes object
-    /// </summary>
-    /// <typeparam name="T">The type of the Kubernetes object.</typeparam>
-    /// <param name="builder">The builder instance.</param>
-    /// <param name="ns">The namespace to assign to the Kubernetes object.</param>
-    /// <returns>The configured builder.</returns>
-    public static IObjectBuilder<T> WithNamespace<T>(this IObjectBuilder<T> builder, string? ns)
-        where T : IMetadata<V1ObjectMeta>
-    {
-        builder.Add(x =>
-        {
-            x.Metadata.SetNamespace(ns);
-        });
-        return builder;
-    }
-
-    /// <summary>
-    /// Adds a label to the Kubernetes object.
-    /// </summary>
-    /// <typeparam name="T">The type of the Kubernetes object.</typeparam>
-    /// <param name="builder">The builder instance.</param>
-    /// <param name="key">The key of the label.</param>
-    /// <param name="value">The value of the label.</param>
-    /// <returns>The configured builder.</returns>
-    public static IObjectBuilder<T> WithLabel<T>(this IObjectBuilder<T> builder, string key, string value)
-        where T : IMetadata<V1ObjectMeta>
-    {
-        builder.Add(x =>
-        {
-            x.Metadata.Labels ??= new Dictionary<string, string>();
-            x.Metadata.Labels.Add(key, value);
-        });
-        return builder;
     }
 }
