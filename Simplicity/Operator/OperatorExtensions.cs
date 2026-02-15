@@ -1,5 +1,6 @@
 ﻿using k8s;
 using k8s.Models;
+using Simplicity.Operator.Configuration;
 using Simplicity.Operator.Hosting;
 using Simplicity.Operator.Informer;
 using Simplicity.Operator.Reconciler;
@@ -10,7 +11,7 @@ public static class OperatorExtensions
 {
     extension(IServiceCollection services)
     {
-        public IServiceCollection AddOpperator()
+        public IServiceCollection AddOpperator(Action<OperatorConfiguration>? configure = null)
         {
             services.AddSingleton<IKubernetes>(sp =>
             {
@@ -18,10 +19,19 @@ public static class OperatorExtensions
                 return new Kubernetes(config);
             });
 
+            services.AddSingleton(sp =>
+            {
+                var configuration = sp.GetService<IConfiguration>();
+                var provider = new OperatorConfigurationProvider(configuration);
+                var config = provider.Build();
+                configure?.Invoke(config);
+                return config;
+            });
+
             services.AddSingleton<SharedInformerFactory>();
             services.AddSingleton<ReconcilerFactory>();
 
-            services.AddHostedService<LeaderElectionHostedService>();
+            services.AddHostedService<OperatorHostedService>();
 
             return services;
         }
@@ -29,12 +39,12 @@ public static class OperatorExtensions
 
     extension(IHost host)
     {
-        public void AddInformer<TResource>(Action<IInformer<TResource>> configure)
+        public void AddInformer<TResource>(Action<IInformer<TResource>>? configure = null)
             where TResource : IKubernetesObject<V1ObjectMeta>
         {
             var factory = host.Services.GetRequiredService<SharedInformerFactory>();
             var informer = factory.GetInformer<TResource>();
-            configure(informer);
+            configure?.Invoke(informer);
         }
 
         public void AddReconciler<TResource>(ReconcileDelegate<TResource> reconcile)

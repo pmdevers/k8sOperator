@@ -1,6 +1,7 @@
 ﻿using k8s;
 using k8s.LeaderElection;
 using k8s.LeaderElection.ResourceLock;
+using Simplicity.Operator.Configuration;
 using Simplicity.Operator.Informer;
 using Simplicity.Operator.Reconciler;
 
@@ -13,6 +14,7 @@ public class OperatorHostedService : IHostedService
     private readonly SharedInformerFactory _informerFactory;
     private readonly ReconcilerFactory _reconcilerFactory;
     private readonly LeaderElector _leaderElector;
+    private readonly OperatorConfiguration _configuration;
     private Task? _leaderElectionTask;
     private CancellationTokenSource? _leaderElectionCts;
 
@@ -21,25 +23,26 @@ public class OperatorHostedService : IHostedService
         ILogger<OperatorHostedService> logger,
         SharedInformerFactory informerFactory,
         ReconcilerFactory reconcilerFactory,
-        IConfiguration config)
+        OperatorConfiguration config)
     {
         _client = client;
         _logger = logger;
         _informerFactory = informerFactory;
         _reconcilerFactory = reconcilerFactory;
+        _configuration = config;
 
         var leaseLock = new LeaseLock(
             client: _client,
-            @namespace: config["LeaderElection:Namespace"] ?? "default",
-            name: config["LeaderElection:LeaseName"] ?? "my-operator-lease",
+            @namespace: config.Namespace,
+            name: config.Lease.LeaseName,
             identity: Environment.MachineName
         );
 
         var leaderElectionConfig = new LeaderElectionConfig(leaseLock)
         {
-            LeaseDuration = TimeSpan.FromSeconds(15),
-            RenewDeadline = TimeSpan.FromSeconds(10),
-            RetryPeriod = TimeSpan.FromSeconds(2)
+            LeaseDuration = config.Lease.LeaseDuration,
+            RenewDeadline = config.Lease.RenewDeadline,
+            RetryPeriod = config.Lease.RetryPeriod
         };
 
         _leaderElector = new LeaderElector(leaderElectionConfig);
@@ -47,6 +50,7 @@ public class OperatorHostedService : IHostedService
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
+        _logger.LogInformation("Starting {operator} - {version} hosted service - beginning leader election", _configuration.Name, _configuration.Version);
         _leaderElector.OnStartedLeading += OnStartedLeading;
         _leaderElector.OnStoppedLeading += OnStoppedLeading;
         _leaderElector.OnNewLeader += OnNewLeader;

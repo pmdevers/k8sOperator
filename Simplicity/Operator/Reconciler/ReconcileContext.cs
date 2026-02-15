@@ -1,5 +1,6 @@
 ﻿using k8s;
 using k8s.Models;
+using Simplicity.Operator.Configuration;
 using Simplicity.Operator.Informer;
 
 namespace Simplicity.Operator.Reconciler;
@@ -8,13 +9,22 @@ public class ReconcileContext<T>(
     IServiceProvider serviceProvider,
     IInformer<T> informer,
     IWorkQueue<T> queue,
-    T item,
+    T resource,
     CancellationToken cancellationToken)
     where T : IKubernetesObject<V1ObjectMeta>
 {
     public IServiceProvider ServiceProvider { get; } = serviceProvider;
-    public T Item { get; } = item;
+    public T Resource { get; } = resource;
     public IInformer<T> Informer => informer;
     public IWorkQueue<T> Queue => queue;
+    public ILogger<T> Logger => ServiceProvider.GetRequiredService<ILogger<T>>();
+    public IKubernetes Kubernetes => ServiceProvider.GetRequiredService<IKubernetes>();
+    public OperatorConfiguration Configuration => ServiceProvider.GetRequiredService<OperatorConfiguration>();
     public CancellationToken CancellationToken { get; } = cancellationToken;
+    public IInformer<TResource> GetInformer<TResource>(string? ns = null)
+        where TResource : IKubernetesObject<V1ObjectMeta>
+    {
+        var factory = ServiceProvider.GetRequiredService<SharedInformerFactory>();
+        return factory.GetInformer<TResource>(ns);
+    }
 }

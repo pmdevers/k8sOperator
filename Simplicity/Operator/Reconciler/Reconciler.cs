@@ -42,9 +42,9 @@ public class Reconciler<T> : IReconciler
         {
             try
             {
-                var item = await Queue.DequeueAsync(_cts.Token);
+                var resource = await Queue.DequeueAsync(_cts.Token);
                 using var scope = Services.CreateScope();
-                var context = new ReconcileContext<T>(scope.ServiceProvider, Informer, Queue, item, _cts.Token);
+                var context = new ReconcileContext<T>(scope.ServiceProvider, Informer, Queue, resource, _cts.Token);
                 await _reconcile(context);
             }
             catch (OperationCanceledException)
