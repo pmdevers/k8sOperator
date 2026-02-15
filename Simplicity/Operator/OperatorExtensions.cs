@@ -37,6 +37,9 @@ public static class OperatorExtensions
                 var provider = new OperatorConfigurationProvider(configuration);
                 var config = provider.Build();
                 configure?.Invoke(config);
+
+                config.Validate();
+
                 return config;
             });
 
@@ -51,11 +54,11 @@ public static class OperatorExtensions
 
     extension(IHost host)
     {
-        public void AddInformer<TResource>(Action<IInformer<TResource>>? configure = null)
+        public void AddInformer<TResource>(string? ns = null, TimeSpan? resyncPeriod = null, Action<IInformer<TResource>>? configure = null)
             where TResource : IKubernetesObject<V1ObjectMeta>
         {
             var factory = host.Services.GetRequiredService<SharedInformerFactory>();
-            var informer = factory.GetInformer<TResource>();
+            var informer = factory.GetInformer<TResource>(ns, resyncPeriod);
             configure?.Invoke(informer);
         }
 

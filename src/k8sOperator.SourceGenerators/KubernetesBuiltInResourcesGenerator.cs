@@ -142,44 +142,29 @@ public class KubernetesBuiltInResourcesGenerator : IIncrementalGenerator
         context.AddSource("KubernetesResourceBuilderExtensions.g.cs", SourceText.From(result, Encoding.UTF8));
     }
 
-    private class ResourceInfo
+    private class ResourceInfo(
+        string resourceType,
+        string specType,
+        string statusType,
+        bool hasSpec,
+        bool hasStatus,
+        bool hasDataMethods = false,
+        bool hasSecretMethods = false,
+        bool hasServiceAccountMethods = false,
+        bool hasRbacMethods = false,
+        bool hasRoleBindingMethods = false,
+        bool hasStorageClassMethods = false)
     {
-        public string ResourceType { get; }
-        public string SpecType { get; }
-        public string StatusType { get; }
-        public bool HasSpec { get; }
-        public bool HasStatus { get; }
-        public bool HasDataMethods { get; }
-        public bool HasSecretMethods { get; }
-        public bool HasServiceAccountMethods { get; }
-        public bool HasRbacMethods { get; }
-        public bool HasRoleBindingMethods { get; }
-        public bool HasStorageClassMethods { get; }
-
-        public ResourceInfo(
-            string resourceType,
-            string specType,
-            string statusType,
-            bool hasSpec,
-            bool hasStatus,
-            bool hasDataMethods = false,
-            bool hasSecretMethods = false,
-            bool hasServiceAccountMethods = false,
-            bool hasRbacMethods = false,
-            bool hasRoleBindingMethods = false,
-            bool hasStorageClassMethods = false)
-        {
-            ResourceType = resourceType;
-            SpecType = specType;
-            StatusType = statusType;
-            HasSpec = hasSpec;
-            HasStatus = hasStatus;
-            HasDataMethods = hasDataMethods;
-            HasSecretMethods = hasSecretMethods;
-            HasServiceAccountMethods = hasServiceAccountMethods;
-            HasRbacMethods = hasRbacMethods;
-            HasRoleBindingMethods = hasRoleBindingMethods;
-            HasStorageClassMethods = hasStorageClassMethods;
-        }
+        public string ResourceType { get; } = resourceType;
+        public string SpecType { get; } = specType;
+        public string StatusType { get; } = statusType;
+        public bool HasSpec { get; } = hasSpec;
+        public bool HasStatus { get; } = hasStatus;
+        public bool HasDataMethods { get; } = hasDataMethods;
+        public bool HasSecretMethods { get; } = hasSecretMethods;
+        public bool HasServiceAccountMethods { get; } = hasServiceAccountMethods;
+        public bool HasRbacMethods { get; } = hasRbacMethods;
+        public bool HasRoleBindingMethods { get; } = hasRoleBindingMethods;
+        public bool HasStorageClassMethods { get; } = hasStorageClassMethods;
     }
 }

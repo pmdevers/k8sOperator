@@ -5,7 +5,7 @@ var builder = Host.CreateApplicationBuilder(args);
 
 builder.Services.AddOpperator(x =>
 {
-    x.Name = "Simplicity Operator";
+    x.Name = "simplicity-operator";
     x.Version = "1.0.0";
 });
 
