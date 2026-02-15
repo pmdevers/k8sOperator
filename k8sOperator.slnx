@@ -3,6 +3,7 @@
     <File Path="examples/Directory.Build.targets" />
     <Project Path="examples/k8s-frontman/k8s-frontman.csproj" Id="4c53c977-5392-4002-804c-3f60a8c88589" />
     <Project Path="examples/simple-operator/simple-operator.csproj" Id="388c9880-01c3-4c9b-a75d-1c52821255a9" />
+    <Project Path="Simplicity/Simplicity.csproj" Id="192ab6cf-4cf3-4b60-b886-6e9f78208b08" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/k8sOperator.BuildTasks/k8sOperator.BuildTasks.csproj" Id="2f253022-d64e-41f2-b70d-e57d873e70cb" />
