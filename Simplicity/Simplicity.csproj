@@ -13,4 +13,8 @@
     <PackageReference Include="KubernetesClient" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\src\k8sOperator.SourceGenerators\k8sOperator.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
 </Project>

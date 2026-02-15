@@ -8,10 +8,12 @@ public class SharedInformerFactory(IKubernetes kubernetes)
 {
     private readonly ConcurrentDictionary<Type, IInternalInformer> _informers = new();
 
+    public IEnumerable<Type> AllTypes() => _informers.Keys;
+
     public IInformer<TResource> GetInformer<TResource>(string? ns = null, TimeSpan? resyncPeriod = null)
         where TResource : IKubernetesObject<V1ObjectMeta>
     {
-        var type = typeof(IInformer<TResource>);
+        var type = typeof(TResource);
 
         var informer = _informers.GetOrAdd(type, _ =>
         {

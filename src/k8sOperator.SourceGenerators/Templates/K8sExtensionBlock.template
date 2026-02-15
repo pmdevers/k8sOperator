@@ -1,0 +1,5 @@
+    extension<T>(IObjectBuilder<T> builder)
+        where T : {{RESOURCE_TYPE}}
+    {
+{{EXTENSION_METHODS}}
+    }

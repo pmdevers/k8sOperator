@@ -1,0 +1,10 @@
+        public IObjectBuilder<T> WithStatus(Action<IObjectBuilder<{{STATUS_TYPE}}>> configure)
+        {
+            builder.Add(x =>
+            {
+                var statusBuilder = ObjectBuilder.Create(x.Status);
+                configure(statusBuilder);
+                x.Status = statusBuilder.Build();
+            });
+            return builder;
+        }

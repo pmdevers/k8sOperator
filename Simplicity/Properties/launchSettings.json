@@ -1,12 +1,36 @@
 {
-  "profiles": {
-    "Simplicity": {
-      "commandName": "Project",
-      "launchBrowser": true,
-      "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
-      },
-      "applicationUrl": "https://localhost:62331;http://localhost:62332"
+    "profiles": {
+        "Operator": {
+            "commandName": "Project",
+            "commandLineArgs": "operator",
+            "environmentVariables": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            },
+            "applicationUrl": "https://localhost:62331;http://localhost:62332"
+        },
+        "Version": {
+            "commandName": "Project",
+            "commandLineArgs": "version",
+            "environmentVariables": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            },
+            "applicationUrl": "https://localhost:62331;http://localhost:62332"
+        },
+        "Install": {
+            "commandName": "Project",
+            "commandLineArgs": "install",
+            "environmentVariables": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            },
+            "applicationUrl": "https://localhost:62331;http://localhost:62332"
+        },
+        "Help": {
+            "commandName": "Project",
+            "commandLineArgs": "help",
+            "environmentVariables": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            },
+            "applicatio nUrl": "https://localhost:62331;http://localhost:62332"
+        }
     }
-  }
 }

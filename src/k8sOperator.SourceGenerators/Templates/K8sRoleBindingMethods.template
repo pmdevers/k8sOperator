@@ -1,0 +1,22 @@
+        public IObjectBuilder<T> WithRoleRef(Action<IObjectBuilder<V1RoleRef>> configure)
+        {
+            builder.Add(x =>
+            {
+                var roleRefBuilder = ObjectBuilder.Create<V1RoleRef>();
+                configure(roleRefBuilder);
+                x.RoleRef = roleRefBuilder.Build();
+            });
+            return builder;
+        }
+
+        public IObjectBuilder<T> AddSubject(Action<IObjectBuilder<V1Subject>> configure)
+        {
+            builder.Add(x =>
+            {
+                var subjectBuilder = ObjectBuilder.Create<V1Subject>();
+                configure(subjectBuilder);
+                x.Subjects ??= [];
+                x.Subjects.Add(subjectBuilder.Build());
+            });
+            return builder;
+        }

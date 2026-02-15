@@ -1,5 +1,7 @@
 ﻿using k8s;
 using k8s.Models;
+using Simplicity.Operator.Cli;
+using Simplicity.Operator.Cli.Commands;
 using Simplicity.Operator.Configuration;
 using Simplicity.Operator.Hosting;
 using Simplicity.Operator.Informer;
@@ -17,6 +19,16 @@ public static class OperatorExtensions
             {
                 var config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
                 return new Kubernetes(config);
+            });
+
+            services.AddSingleton(sp =>
+            {
+                var registry = new CommandRegistry(sp);
+                registry.RegisterCommand(typeof(HelpCommand));
+                registry.RegisterCommand(typeof(OperatorCommand));
+                registry.RegisterCommand(typeof(VersionCommand));
+                registry.RegisterCommand(typeof(InstallCommand));
+                return registry;
             });
 
             services.AddSingleton(sp =>
@@ -52,6 +64,14 @@ public static class OperatorExtensions
         {
             var factory2 = host.Services.GetRequiredService<ReconcilerFactory>();
             var reconciler = factory2.Create(reconcile);
+        }
+
+        public Task RunOperatorAsync()
+        {
+            var args = Environment.GetCommandLineArgs().Skip(1).ToArray();
+            var registry = host.Services.GetRequiredService<CommandRegistry>();
+            var command = new RootCommand(host, registry);
+            return command.ExecuteAsync(args);
         }
     }
 }
