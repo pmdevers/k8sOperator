@@ -1,16 +1,8 @@
-using k8s.Operator.Metadata;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using System.Reflection;
 
 namespace k8s.Operator.Configuration;
 
-/// <summary>
-/// Provides operator configuration from multiple sources with priority:
-/// 1. OperatorBuilder (explicit configuration)
-/// 2. appsettings.json / IConfiguration
-/// 3. Assembly attributes (build-time metadata)
-/// 4. Defaults
-/// </summary>
 public class OperatorConfigurationProvider(
     IConfiguration? configuration = null,
     Assembly? assembly = null)
@@ -18,72 +10,57 @@ public class OperatorConfigurationProvider(
     private readonly Assembly _assembly = assembly
         ?? Assembly.GetEntryAssembly()
         ?? Assembly.GetExecutingAssembly();
-
-    /// <summary>
-    /// Build operator configuration from all available sources
-    /// </summary>
     public OperatorConfiguration Build()
     {
         var config = new OperatorConfiguration();
-
         // 1. Start with assembly attributes (lowest priority)
         ApplyAssemblyAttributes(config);
-
         // 2. Apply configuration (e.g., appsettings.json)
         ApplyConfiguration(config);
-
         // 3. OperatorBuilder can override in AddOperator() (highest priority, done by caller)
-
         return config;
     }
-
     private void ApplyAssemblyAttributes(OperatorConfiguration config)
     {
-        var versionAttrib = _assembly.GetCustomAttribute<AssemblyFileVersionAttribute>();
+        var versionAttrib = _assembly.GetCustomAttribute<OperatorVersionAttribute>();
         if (versionAttrib != null && !string.IsNullOrEmpty(versionAttrib.Version))
         {
             config.Version = versionAttrib.Version;
         }
-
         // Read OperatorName from assembly attribute
         var operatorNameAttr = _assembly.GetCustomAttribute<OperatorNameAttribute>();
         if (operatorNameAttr != null && !string.IsNullOrEmpty(operatorNameAttr.OperatorName))
         {
             config.Name = operatorNameAttr.OperatorName;
         }
-
         // Read Namespace from assembly attribute
-        var namespaceAttr = _assembly.GetCustomAttribute<NamespaceAttribute>();
+        var namespaceAttr = _assembly.GetCustomAttribute<OperatorNamespaceAttribute>();
         if (namespaceAttr != null && !string.IsNullOrEmpty(namespaceAttr.Namespace))
         {
             config.Namespace = namespaceAttr.Namespace;
         }
-
-        // Read Docker image from assembly attribute
-        var dockerAttr = _assembly.GetCustomAttribute<DockerImageAttribute>();
-        if (dockerAttr != null)
-        {
-            if (!string.IsNullOrEmpty(dockerAttr.Registry))
-                config.ContainerRegistry = dockerAttr.Registry;
-
-            if (!string.IsNullOrEmpty(dockerAttr.Repository))
-                config.ContainerRepository = dockerAttr.Repository;
-
-            if (!string.IsNullOrEmpty(dockerAttr.Tag))
-                config.ContainerTag = dockerAttr.Tag;
-        }
     }
-
     private void ApplyConfiguration(OperatorConfiguration config)
     {
         if (configuration == null)
-            return;
-
-        // Bind from appsettings.json section: "Operator"
-        var section = configuration.GetSection("Operator");
-        if (section.Exists())
         {
-            section.Bind(config);
+            return;
+        }
+
+        var version = configuration["Operator:Version"];
+        if (!string.IsNullOrEmpty(version))
+        {
+            config.Version = version;
+        }
+        var name = configuration["Operator:Name"];
+        if (!string.IsNullOrEmpty(name))
+        {
+            config.Name = name;
+        }
+        var ns = configuration["Operator:Namespace"];
+        if (!string.IsNullOrEmpty(ns))
+        {
+            config.Namespace = ns;
         }
     }
 }

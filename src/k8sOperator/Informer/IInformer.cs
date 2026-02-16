@@ -1,15 +1,28 @@
-﻿using k8s.Operator.Models;
+﻿using k8s;
+using k8s.Models;
 
 namespace k8s.Operator.Informer;
 
-public interface IInformer<TResource>
-    where TResource : CustomResource
+public interface IInformer<T>
+    where T : IKubernetesObject<V1ObjectMeta>
 {
-    IAsyncEnumerable<WatchEvent<TResource>> Events { get; }
+    event Action<T, CancellationToken> OnAdd;
+    event Action<T?, T, CancellationToken> OnUpdate;
+    event Action<T, CancellationToken> OnDelete;
 
-    IReadOnlyList<TResource> List();
+    IIndexer<T> Indexer { get; }
+    IEnumerable<T> List();
+}
 
-    TResource? Get(string name, string? ns = null);
+public interface IInternalInformer
+{
+    Task StartAsync(CancellationToken cancellationToken);
+    Task<bool> WaitForSyncAsync(CancellationToken cancellationToken);
+    Task StopAsync(CancellationToken cancellationToken);
+}
 
-    bool HasSynced { get; }
+public record WatchEvent<TResource>
+{
+    public WatchEventType Type { get; init; }
+    public required TResource Object { get; init; }
 }

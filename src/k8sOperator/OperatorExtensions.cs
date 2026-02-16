@@ -1,147 +1,82 @@
-using k8s.Operator.Builders;
+﻿using k8s.Models;
+using k8s.Operator.Cli;
+using k8s.Operator.Cli.Commands;
 using k8s.Operator.Configuration;
-using k8s.Operator.Host;
-using k8s.Operator.Host.Commands;
+using k8s.Operator.Hosting;
 using k8s.Operator.Informer;
-using k8s.Operator.Leader;
-using k8s.Operator.Models;
-using k8s.Operator.Queue;
+using k8s.Operator.Reconciler;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
-using System.Reflection;
 
 namespace k8s.Operator;
 
-/// <summary>
-/// Extension methods for registering informer-based controllers.
-/// </summary>
 public static class OperatorExtensions
 {
     extension(IServiceCollection services)
     {
-        public IServiceCollection AddOperator(Action<OperatorBuilder>? configure = null)
+        public IServiceCollection AddOpperator(Action<OperatorConfiguration>? configure = null)
         {
-            var builder = new OperatorBuilder();
-            configure?.Invoke(builder);
-
-            services.TryAddSingleton<ControllerDatasource>();
-            services.TryAddSingleton<IInformerFactory, InformerFactory>();
-            services.TryAddTransient(typeof(IWorkQueue<>), typeof(WorkQueue<>));
-            services.TryAddTransient(typeof(IInformer<>), typeof(InformerFactory<>));
-
-            services.TryAddSingleton<IKubernetes>((_) =>
+            services.AddSingleton<IKubernetes>(sp =>
             {
-                var config = builder?.Configuration
-                    ?? KubernetesClientConfiguration.BuildDefaultConfig();
+                var config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
                 return new Kubernetes(config);
             });
 
-            services.TryAddSingleton(sp =>
+            services.AddSingleton(sp =>
+            {
+                var registry = new CommandRegistry(sp);
+                registry.RegisterCommand(typeof(HelpCommand));
+                registry.RegisterCommand(typeof(OperatorCommand));
+                registry.RegisterCommand(typeof(VersionCommand));
+                registry.RegisterCommand(typeof(InstallCommand));
+                return registry;
+            });
+
+            services.AddSingleton(sp =>
             {
                 var configuration = sp.GetService<IConfiguration>();
                 var provider = new OperatorConfigurationProvider(configuration);
                 var config = provider.Build();
-
-                // Apply OperatorBuilder overrides if provided
-                if (builder.Operator != null)
-                {
-                    if (!string.IsNullOrEmpty(builder.Operator.Name))
-                        config.Name = builder.Operator.Name;
-                    if (!string.IsNullOrEmpty(builder.Operator.Namespace))
-                        config.Namespace = builder.Operator.Namespace;
-                    if (!string.IsNullOrEmpty(builder.Operator.ContainerRegistry))
-                        config.ContainerRegistry = builder.Operator.ContainerRegistry;
-                    if (!string.IsNullOrEmpty(builder.Operator.ContainerRepository))
-                        config.ContainerRepository = builder.Operator.ContainerRepository;
-                    if (!string.IsNullOrEmpty(builder.Operator.ContainerTag))
-                        config.ContainerTag = builder.Operator.ContainerTag;
-                    if (!string.IsNullOrEmpty(builder.Operator.UpdateUrl))
-                        config.UpdateUrl = builder.Operator.UpdateUrl;
-
-                }
+                configure?.Invoke(config);
 
                 config.Validate();
 
                 return config;
             });
-            services.TryAddSingleton(sp =>
-            {
-                var config = sp.GetRequiredService<OperatorConfiguration>();
-                var leaderElection = builder.LeaderElection;
 
-                // Set default lease name and namespace if not already set
-                if (string.IsNullOrEmpty(leaderElection.LeaseName))
-                {
-                    leaderElection.LeaseName = $"{config.Name}-leader-election";
-                }
-                if (string.IsNullOrEmpty(leaderElection.LeaseNamespace))
-                {
-                    leaderElection.LeaseNamespace = config.Namespace;
-                }
+            services.AddSingleton<SharedInformerFactory>();
+            services.AddSingleton<ReconcilerFactory>();
 
-                return leaderElection;
-            });
-            services.TryAddSingleton(sp =>
-            {
-                var o = sp.GetRequiredService<LeaderElectionOptions>();
-                var type = o.ElectionType switch
-                {
-                    LeaderElectionType.Lease => typeof(LeaderElectionService),
-                    LeaderElectionType.Never => typeof(NeverLeaderElectionService),
-                    _ => typeof(NoopLeaderElectionService)
-                };
-                // These types are explicitly preserved in TrimmedRoots.xml
-                return (ILeaderElectionService)ActivatorUtilities.CreateInstance(sp, type);
-            });
+            services.AddHostedService<OperatorHostedService>();
 
-            services.TryAddSingleton(x => builder.InstallCommand ?? new InstallCommandOptions());
-
-            // Register command infrastructure
-            services.TryAddSingleton(sp =>
-            {
-                var registry = new CommandRegistry();
-
-                // Discover and register built-in commands
-                registry.RegisterCommand<HelpCommand>();
-                registry.RegisterCommand<InstallCommand>();
-                registry.RegisterCommand<VersionCommand>();
-                registry.RegisterCommand<CreateCommand>();
-                registry.RegisterCommand<OperatorCommand>();
-
-                // Discover commands in entry assembly
-                var entryAssembly = Assembly.GetEntryAssembly();
-                if (entryAssembly != null)
-                {
-                    registry.DiscoverCommands(entryAssembly);
-                }
-
-                return registry;
-            });
-
-
-            services.AddHostedService<OperatorService>();
             return services;
         }
     }
 
-    extension(IHost app)
+    extension(IHost host)
     {
-        public ConventionBuilder<ControllerBuilder> ReconcilerFor<TResource>(Delegate handler)
-            where TResource : CustomResource
+        public void AddInformer<TResource>(string? ns = null, TimeSpan? resyncPeriod = null, Action<IInformer<TResource>>? configure = null)
+            where TResource : IKubernetesObject<V1ObjectMeta>
         {
-            var datasource = app.Services.GetRequiredService<ControllerDatasource>();
-            return datasource.AddResource<TResource>(handler);
+            var factory = host.Services.GetRequiredService<SharedInformerFactory>();
+            var informer = factory.GetInformer<TResource>(ns, resyncPeriod);
+            configure?.Invoke(informer);
         }
 
-        public async Task<int> RunOperatorAsync()
+        public void AddReconciler<TResource>(ReconcileDelegate<TResource> reconcile)
+            where TResource : IKubernetesObject<V1ObjectMeta>
+        {
+            var factory2 = host.Services.GetRequiredService<ReconcilerFactory>();
+            var reconciler = factory2.Create(reconcile);
+        }
+
+        public Task RunOperatorAsync()
         {
             var args = Environment.GetCommandLineArgs().Skip(1).ToArray();
-            var registry = app.Services.GetRequiredService<CommandRegistry>();
-            var handler = new CommandHandler(app, registry);
-            return await handler.HandleAsync(args);
+            var registry = host.Services.GetRequiredService<CommandRegistry>();
+            var command = new RootCommand(host, registry);
+            return command.ExecuteAsync(args);
         }
-
     }
 }

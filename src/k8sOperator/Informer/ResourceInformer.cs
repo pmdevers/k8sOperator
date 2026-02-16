@@ -1,62 +1,45 @@
-﻿using k8s.Models;
-using k8s.Operator;
-using k8s.Operator.Cache;
-using k8s.Operator.Models;
-using System.Diagnostics.CodeAnalysis;
+﻿using k8s;
+using k8s.Models;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
-using System.Threading.Channels;
 
 namespace k8s.Operator.Informer;
 
-internal class ResourceInformer<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] TResource>(
+public class ResourceInformer<TResource>(
     IKubernetes client,
     string? ns,
-    IResourceCache<TResource> cache,
-    TimeSpan? resyncPeriod = null) :
-IInformer<TResource>, IInformerInternal
-where TResource : CustomResource
+    IIndexer<TResource> indexer,
+    TimeSpan? resyncPeriod = null)
+    : IInformer<TResource>, IInternalInformer
+    where TResource : IKubernetesObject<V1ObjectMeta>
 {
-    private readonly IKubernetes _client = client;
-    private readonly string? _namespace = ns;
-    private readonly IResourceCache<TResource> _cache = cache;
-    private readonly Channel<WatchEvent<TResource>> _events = Channel.CreateUnbounded<WatchEvent<TResource>>();
+
     private readonly TimeSpan _resyncPeriod = resyncPeriod ?? TimeSpan.FromMinutes(10);
-    private string? _lastResourceVersion;
+
+    public event Action<TResource, CancellationToken>? OnAdd;
+    public event Action<TResource?, TResource, CancellationToken>? OnUpdate;
+    public event Action<TResource, CancellationToken>? OnDelete;
+
+    public IIndexer<TResource> Indexer => indexer;
+    public IEnumerable<TResource> List() => indexer.List();
+
     private readonly KubernetesEntityAttribute _entityInfo = typeof(TResource).GetCustomAttribute<KubernetesEntityAttribute>()
             ?? throw new InvalidOperationException($"Type {typeof(TResource).Name} must have KubernetesEntityAttribute");
 
     private volatile bool _synced;
-
-    public bool HasSynced => _synced;
-
-    public IAsyncEnumerable<WatchEvent<TResource>> Events => _events.Reader.ReadAllAsync();
-
-    public TResource? Get(string name, string? ns = null)
-        => _cache.Get(name, ns);
-
-    public IReadOnlyList<TResource> List()
-        => _cache.List();
+    private string? _lastResourceVersion;
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        var list = await ListResourcesAsync(cancellationToken);
-        _cache.Replace(list.Items);
+        var list = await ListAsync(cancellationToken);
+        indexer.Replace(list.Items);
         _lastResourceVersion = list.ResourceVersion();
         _synced = true;
 
-        // Emit synthetic "Added" events for all existing resources
-        // This ensures reconcilers run on startup for existing resources
         foreach (var item in list.Items)
         {
-            var addedEvent = new WatchEvent<TResource>
-            {
-                Type = WatchEventType.Added,
-                Object = item
-            };
-
-            await _events.Writer.WriteAsync(addedEvent, cancellationToken);
+            OnAdd?.Invoke(item, cancellationToken);
         }
 
         _ = Task.Run(() => WatchLoop(cancellationToken), cancellationToken);
@@ -65,15 +48,18 @@ where TResource : CustomResource
     public Task<bool> WaitForSyncAsync(CancellationToken cancellationToken)
         => Task.FromResult(_synced);
 
-    private async Task<KubernetesList<TResource>> ListResourcesAsync(CancellationToken cancellationToken)
+    public Task StopAsync(CancellationToken cancellationToken)
+        => Task.CompletedTask;
+
+    private async Task<KubernetesList<TResource>> ListAsync(CancellationToken cancellationToken)
     {
-        if (_namespace != null)
+        if (ns != null)
         {
-            return await _client.CustomObjects.ListNamespacedCustomObjectAsync<KubernetesList<TResource>>(
+            return await client.CustomObjects.ListNamespacedCustomObjectAsync<KubernetesList<TResource>>(
                 group: _entityInfo.Group,
                 version: _entityInfo.ApiVersion,
                 plural: _entityInfo.PluralName,
-                namespaceParameter: _namespace,
+                namespaceParameter: ns,
                 allowWatchBookmarks: true,
                 labelSelector: "",
                 cancellationToken: cancellationToken
@@ -81,7 +67,7 @@ where TResource : CustomResource
         }
         else
         {
-            return await _client.CustomObjects.ListClusterCustomObjectAsync<KubernetesList<TResource>>(
+            return await client.CustomObjects.ListClusterCustomObjectAsync<KubernetesList<TResource>>(
                 group: _entityInfo.Group,
                 version: _entityInfo.ApiVersion,
                 plural: _entityInfo.PluralName,
@@ -91,7 +77,6 @@ where TResource : CustomResource
             );
         }
     }
-
     private async Task WatchLoop(CancellationToken cancellationToken)
     {
         while (!cancellationToken.IsCancellationRequested)
@@ -107,76 +92,49 @@ where TResource : CustomResource
                         _lastResourceVersion = evt.Object.Metadata.ResourceVersion;
                     }
 
-                    // Skip status-only updates by checking generation
-                    if (ShouldSkipEvent(evt))
-                    {
-                        // Still update cache but don't trigger reconciliation
-                        _cache.Apply(evt);
-                        continue;
-                    }
+                    if (evt.Object is null) continue;
 
-                    _cache.Apply(evt);
-                    await _events.Writer.WriteAsync(evt, cancellationToken);
+                    switch (evt.Type)
+                    {
+                        case WatchEventType.Added:
+                            indexer.AddOrUpdate(evt.Object);
+                            OnAdd?.Invoke(evt.Object, cancellationToken);
+                            break;
+                        case WatchEventType.Modified:
+                            var oldObj = indexer.Get(evt.Object);
+                            indexer.AddOrUpdate(evt.Object);
+                            OnUpdate?.Invoke(oldObj, evt.Object, cancellationToken);
+                            break;
+                        case WatchEventType.Deleted:
+                            indexer.Delete(evt.Object);
+                            OnDelete?.Invoke(evt.Object, cancellationToken);
+                            break;
+                        default:
+                            // Ignore unknown event types
+                            break;
+                    }
                 }
             }
             catch when (!cancellationToken.IsCancellationRequested)
             {
                 // Log and retry watch on error
-                await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
+                await Task.Delay(_resyncPeriod, cancellationToken);
             }
         }
     }
 
-    private bool ShouldSkipEvent(WatchEvent<TResource> evt)
-    {
-        if (evt.Type == WatchEventType.Deleted)
-        {
-            return false; // Never skip delete events
-        }
-
-        if (evt.Type == WatchEventType.Added)
-        {
-            return false; // Never skip add events (new resources)
-        }
-
-        if (evt.Object?.Metadata == null)
-        {
-            return true;
-        }
-
-        // Get cached version to compare
-        var cached = _cache.Get(evt.Object.Metadata.Name, evt.Object.Metadata.NamespaceProperty);
-        if (cached == null)
-        {
-            return false; // New resource, don't skip
-        }
-
-        // Compare generation - if unchanged, this is likely a status-only update
-        var currentGeneration = evt.Object.Metadata.Generation ?? 0;
-        var cachedGeneration = cached.Metadata.Generation ?? 0;
-
-        if (currentGeneration == cachedGeneration)
-        {
-            // Generation unchanged = spec unchanged = status-only update
-            return true;
-        }
-
-        return false;
-    }
-
     private async IAsyncEnumerable<WatchEvent<TResource>> GetWatchStream([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-
         IAsyncEnumerable<(WatchEventType, object)> watchStream;
 
-        if (_namespace != null)
+        if (ns != null)
         {
             // Watch namespace-scoped resources
-            watchStream = _client.CustomObjects.WatchListNamespacedCustomObjectAsync(
+            watchStream = client.CustomObjects.WatchListNamespacedCustomObjectAsync(
                 group: _entityInfo.Group,
                 version: _entityInfo.ApiVersion,
                 plural: _entityInfo.PluralName,
-                namespaceParameter: _namespace,
+                namespaceParameter: ns,
                 allowWatchBookmarks: true,
                 resourceVersion: _lastResourceVersion,
                 labelSelector: "",
@@ -186,7 +144,7 @@ where TResource : CustomResource
         else
         {
             // Watch cluster-scoped resources
-            watchStream = _client.CustomObjects.WatchListClusterCustomObjectAsync(
+            watchStream = client.CustomObjects.WatchListClusterCustomObjectAsync(
                 group: _entityInfo.Group,
                 version: _entityInfo.ApiVersion,
                 plural: _entityInfo.PluralName,
