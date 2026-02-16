@@ -13,61 +13,78 @@ public class UpdateBuilderExtensionsGenerator : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        // Find all classes that inherit from CustomResource<TSpec, TStatus>
-        var customResourceDeclarations = context.SyntaxProvider
+        // Find all classes/records that implement IKubernetesObject
+        var kubernetesObjectDeclarations = context.SyntaxProvider
             .CreateSyntaxProvider(
-                predicate: static (s, _) => IsCandidateClass(s),
+                predicate: static (s, _) => IsCandidateType(s),
                 transform: static (ctx, _) => GetSemanticTargetForGeneration(ctx))
             .Where(static m => m is not null);
 
         // Combine with compilation
-        var compilationAndClasses = context.CompilationProvider.Combine(customResourceDeclarations.Collect());
+        var compilationAndClasses = context.CompilationProvider.Combine(kubernetesObjectDeclarations.Collect());
 
         // Generate the extensions
         context.RegisterSourceOutput(compilationAndClasses,
             static (spc, source) => Execute(source.Left, source.Right!, spc));
     }
 
-    private static bool IsCandidateClass(SyntaxNode node)
+    private static bool IsCandidateType(SyntaxNode node)
     {
-        return node is ClassDeclarationSyntax classDeclaration
-            && classDeclaration.BaseList != null
-            && classDeclaration.BaseList.Types.Count > 0;
+        return (node is ClassDeclarationSyntax || node is RecordDeclarationSyntax)
+            && node is TypeDeclarationSyntax typeDeclaration
+            && typeDeclaration.BaseList != null
+            && typeDeclaration.BaseList.Types.Count > 0;
     }
 
     private static ClassInfo? GetSemanticTargetForGeneration(GeneratorSyntaxContext context)
     {
-        var classDeclaration = (ClassDeclarationSyntax)context.Node;
+        var typeDeclaration = (TypeDeclarationSyntax)context.Node;
         var semanticModel = context.SemanticModel;
 
-        if (semanticModel.GetDeclaredSymbol(classDeclaration) is not INamedTypeSymbol classSymbol)
+        if (semanticModel.GetDeclaredSymbol(typeDeclaration) is not INamedTypeSymbol typeSymbol)
             return null;
 
-        // Check if it inherits from CustomResource<TSpec, TStatus>
-        var baseType = classSymbol.BaseType;
-        while (baseType != null)
+        // Check if it implements IKubernetesObject
+        if (!ImplementsInterface(typeSymbol, "IKubernetesObject", "k8s"))
+            return null;
+
+        // Check for Spec and Status properties
+        var specProperty = typeSymbol.GetMembers()
+            .OfType<IPropertySymbol>()
+            .FirstOrDefault(p => p.Name == "Spec" && p.DeclaredAccessibility == Accessibility.Public);
+
+        var statusProperty = typeSymbol.GetMembers()
+            .OfType<IPropertySymbol>()
+            .FirstOrDefault(p => p.Name == "Status" && p.DeclaredAccessibility == Accessibility.Public);
+
+        // Skip if neither Spec nor Status exists
+        if (specProperty == null && statusProperty == null)
+            return null;
+
+        return new ClassInfo(
+            typeSymbol.ContainingNamespace.ToDisplayString(),
+            typeSymbol.Name,
+            specProperty != null,
+            specProperty?.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+            specProperty?.Type.Name,
+            statusProperty != null,
+            statusProperty?.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+            statusProperty?.Type.Name
+        );
+    }
+
+    private static bool ImplementsInterface(INamedTypeSymbol typeSymbol, string interfaceName, string namespacePrefix)
+    {
+        foreach (var interfaceSymbol in typeSymbol.AllInterfaces)
         {
-            if (baseType.Name == "CustomResource"
-                && baseType.ContainingNamespace.ToDisplayString() == "k8s.Operator.Models"
-                && baseType.TypeArguments.Length == 2)
+            if (interfaceSymbol.Name == interfaceName
+                && interfaceSymbol.ContainingNamespace.ToDisplayString().StartsWith(namespacePrefix))
             {
-                var specType = baseType.TypeArguments[0];
-                var statusType = baseType.TypeArguments[1];
-
-                return new ClassInfo(
-                    classSymbol.ContainingNamespace.ToDisplayString(),
-                    classSymbol.Name,
-                    specType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
-                    statusType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
-                    specType.Name,
-                    statusType.Name
-                );
+                return true;
             }
-
-            baseType = baseType.BaseType;
         }
 
-        return null;
+        return false;
     }
 
     private static void Execute(
@@ -86,54 +103,56 @@ public class UpdateBuilderExtensionsGenerator : IIncrementalGenerator
         if (!distinctClasses.Any())
             return;
 
-        // Group by namespace
-        var grouped = distinctClasses.GroupBy(c => c!.Namespace);
-
-        foreach (var group in grouped)
+        // Generate one extension type per class
+        foreach (var classInfo in distinctClasses)
         {
-            var source = GenerateExtensionsForNamespace(group.Key!, group.ToList()!);
-            context.AddSource($"UpdateBuilderExtensions.{group.Key}.g.cs", SourceText.From(source, Encoding.UTF8));
+            var source = GenerateExtensionForClass(classInfo!);
+            var fileName = $"{classInfo!.ClassName}BuilderExtensions.g.cs";
+            context.AddSource(fileName, SourceText.From(source, Encoding.UTF8));
         }
     }
 
-    private static string GenerateExtensionsForNamespace(string namespaceName, List<ClassInfo> classes)
+    private static string GenerateExtensionForClass(ClassInfo classInfo)
     {
         // Load templates
-        var classTemplate = TemplateReader.ReadTemplate("UpdateBuilderExtensions.template");
-        var specMethodTemplate = TemplateReader.ReadTemplate("WithSpecMethod.template");
-        var statusMethodTemplate = TemplateReader.ReadTemplate("WithStatusMethod.template");
+        var extensionTemplate = TemplateReader.ReadTemplate("ImplicitExtension.template");
+        var specMethodTemplate = TemplateReader.ReadTemplate("ImplicitWithSpecMethod.template");
+        var statusMethodTemplate = TemplateReader.ReadTemplate("ImplicitWithStatusMethod.template");
 
         // Generate all methods
         var methods = new StringBuilder();
-        for (int i = 0; i < classes.Count; i++)
-        {
-            var classInfo = classes[i];
 
-            // Generate WithSpec method
+        // Generate WithSpec method if Spec property exists
+        if (classInfo.HasSpec && classInfo.SpecTypeName != null)
+        {
             var specMethod = specMethodTemplate
                 .Replace("{{CLASS_NAME}}", classInfo.ClassName)
                 .Replace("{{SPEC_TYPE_NAME}}", classInfo.SpecTypeName);
 
             methods.Append(specMethod);
-            methods.AppendLine();
 
-            // Generate WithStatus method
-            var statusMethod = statusMethodTemplate
-                .Replace("{{CLASS_NAME}}", classInfo.ClassName)
-                .Replace("{{STATUS_TYPE_NAME}}", classInfo.StatusTypeName);
-
-            methods.Append(statusMethod);
-
-            // Add separator between classes (but not after the last one)
-            if (i < classes.Count - 1)
+            // Add line break if we're also adding status method
+            if (classInfo.HasStatus)
             {
                 methods.AppendLine();
             }
         }
 
-        // Replace placeholders in class template
-        var result = classTemplate
-            .Replace("{{NAMESPACE}}", namespaceName)
+        // Generate WithStatus method if Status property exists
+        if (classInfo.HasStatus && classInfo.StatusTypeName != null)
+        {
+            var statusMethod = statusMethodTemplate
+                .Replace("{{CLASS_NAME}}", classInfo.ClassName)
+                .Replace("{{STATUS_TYPE_NAME}}", classInfo.StatusTypeName);
+
+            methods.Append(statusMethod);
+        }
+
+        // Replace placeholders in extension template
+        var result = extensionTemplate
+            .Replace("{{NAMESPACE}}", classInfo.Namespace)
+            .Replace("{{EXTENSION_NAME}}", $"{classInfo.ClassName}BuilderExtensions")
+            .Replace("{{CLASS_NAME}}", classInfo.ClassName)
             .Replace("{{METHODS}}", methods.ToString());
 
         return result;
@@ -142,8 +161,10 @@ public class UpdateBuilderExtensionsGenerator : IIncrementalGenerator
     private record ClassInfo(
         string Namespace,
         string ClassName,
-        string SpecTypeFullName,
-        string StatusTypeFullName,
-        string SpecTypeName,
-        string StatusTypeName);
+        bool HasSpec,
+        string? SpecTypeFullName,
+        string? SpecTypeName,
+        bool HasStatus,
+        string? StatusTypeFullName,
+        string? StatusTypeName);
 }

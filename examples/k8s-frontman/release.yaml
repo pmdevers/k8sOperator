@@ -1,0 +1,13 @@
+apiVersion: frontman.io/v1
+kind: Release
+metadata:
+  name: release
+  namespace: default
+spec:
+  provider: ""
+  url: ""
+  version: ""
+status:
+  currentVersion: ""
+  previousVersion: ""
+  message: ""

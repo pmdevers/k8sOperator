@@ -1,30 +1,13 @@
-﻿using k8s.Frontman.Features.Releases;
-using k8s.Operator;
-using k8s.Operator.Generation;
+﻿using k8s.Operator.Generation;
+using k8s.Operator.Reconciler;
 
 namespace k8s.Frontman.Features.Providers;
 
 public static partial class ProviderReconciler
 {
-    public static async Task ReconcileAsync(OperatorContext context)
+    public static async Task ReconcileAsync(ReconcileContext<V1Provider> context)
     {
-        var informer = context.GetInformer<Provider>();
-        var key = context.ResourceKey;
-
-        if (context.Resource is not Provider provider)
-        {
-            return;
-        }
-
-        await context.Update<Provider>(x =>
-        {
-
-            x.WithLabel("managed-by", context.Configuration.Name);
-            x.WithLabel("processed", "true");
-            x.WithAnnotation("last-reconcile", DateTime.UtcNow.ToString("o"));
-        });
-
-        var fileprovider = (provider.Spec.File?.Create() ?? provider.Spec.AzureBlob?.Create());
+        var fileprovider = context.Resource.GetFileProvider();
 
         if (fileprovider is not null)
         {
@@ -32,14 +15,21 @@ public static partial class ProviderReconciler
                 .Where(x => x.IsDirectory)
                 .Select(x => x.Name).ToList();
 
-            await context.Update<Provider>(x =>
+            context.Update(x =>
             {
+                x.WithLabel("managed-by", context.Configuration.Name);
+                x.WithLabel("processed", "true");
                 x.WithStatus(x =>
                 {
-                    x.NumberOfReleases = dirs.Count;
-                    x.Versions = [.. dirs.TakeLast(10)];
+                    x.Add(s =>
+                    {
+                        s.NumberOfReleases = dirs.Count;
+                        s.Versions = [.. dirs.TakeLast(10)];
+                    });
                 });
             });
         }
+
+        await context.Queue.Requeue(context.Resource, ResyncIntervalAttribute.ParseDuration(context.Resource.Spec.Interval));
     }
 }

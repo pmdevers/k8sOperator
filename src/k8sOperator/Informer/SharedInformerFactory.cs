@@ -1,8 +1,59 @@
-﻿using k8s;
-using k8s.Models;
+﻿using k8s.Models;
+using k8s.Operator.Configuration;
 using System.Collections.Concurrent;
 
 namespace k8s.Operator.Informer;
+
+public class InformerFactory<T>(SharedInformerFactory factory, OperatorConfiguration config) : IInformer<T>
+    where T : IKubernetesObject<V1ObjectMeta>
+{
+    private IInformer<T> _informer = factory.GetInformer<T>(config.Namespace);
+    public IIndexer<T> Indexer => _informer.Indexer;
+
+    public event Action<T, CancellationToken> OnAdd
+    {
+        add
+        {
+            _informer.OnAdd += value;
+        }
+
+        remove
+        {
+            _informer.OnAdd -= value;
+        }
+    }
+
+    public event Action<T?, T, CancellationToken> OnUpdate
+    {
+        add
+        {
+            _informer.OnUpdate += value;
+        }
+
+        remove
+        {
+            _informer.OnUpdate -= value;
+        }
+    }
+
+    public event Action<T, CancellationToken> OnDelete
+    {
+        add
+        {
+            _informer.OnDelete += value;
+        }
+
+        remove
+        {
+            _informer.OnDelete -= value;
+        }
+    }
+
+    public IEnumerable<T> List()
+    {
+        return _informer.List();
+    }
+}
 
 public class SharedInformerFactory(IKubernetes kubernetes)
 {

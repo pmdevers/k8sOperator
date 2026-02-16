@@ -13,18 +13,18 @@ public class InstallCommand(OperatorConfiguration config, SharedInformerFactory 
 
     public async Task ExecuteAsync(string[] args)
     {
-        var resources = factory.AllTypes().ToList();
-        var ns = CreateNamespace(config);
+        var resources = config.Install.Resources;
         var clusterrole = CreateClusterRole(config, resources);
         var clusterrolebinding = CreateClusterRoleBinding(config);
 
+        var ns = CreateNamespace(config);
         var deployment = CreateDeployment(config);
 
         foreach (var item in resources)
         {
             var group = item.GetCustomAttribute<KubernetesEntityAttribute>();
 
-            if (group == null || !group.Group.Equals(config.Group, StringComparison.OrdinalIgnoreCase))
+            if (group == null)
             {
                 continue;
             }
@@ -39,6 +39,11 @@ public class InstallCommand(OperatorConfiguration config, SharedInformerFactory 
         await Write(ns);
         await Write(deployment);
 
+        foreach (var item in config.Install.AdditionalObjects)
+        {
+            await Write(item);
+        }
+
         Console.WriteLine(_output.ToString());
     }
 
@@ -46,14 +51,6 @@ public class InstallCommand(OperatorConfiguration config, SharedInformerFactory 
     {
         await _output.WriteLineAsync(KubernetesYaml.Serialize(obj));
         await _output.WriteLineAsync("---");
-    }
-
-    internal static V1Namespace CreateNamespace(OperatorConfiguration config)
-    {
-        var nsBuilder = KubernetesObjectBuilder.Create<V1Namespace>();
-        nsBuilder.WithName(config.Namespace);
-
-        return nsBuilder.Build();
     }
 
     internal static V1CustomResourceDefinition CreateCustomResourceDefinition(Type item, KubernetesEntityAttribute group)
@@ -93,11 +90,14 @@ public class InstallCommand(OperatorConfiguration config, SharedInformerFactory 
         return crdBuilder.Build();
     }
 
-    internal static V1Deployment CreateDeployment(OperatorConfiguration config, Action<IObjectBuilder<V1Deployment>>? customize = null)
-    {
-        var deployment = KubernetesObjectBuilder.Create<V1Deployment>();
+    private static V1Namespace CreateNamespace(OperatorConfiguration config) =>
+            KubernetesObjectBuilder.Create<V1Namespace>()
+            .WithName(config.Namespace)
+            .Add(x => config.Install.ConfigureNamespace?.Invoke(x))
+            .Build();
 
-        deployment
+    private static V1Deployment CreateDeployment(OperatorConfiguration config)
+        => KubernetesObjectBuilder.Create<V1Deployment>()
             .WithName($"{config.Name}")
             .WithNamespace(config.Namespace)
             .WithLabel("operator", config.Name)
@@ -111,6 +111,7 @@ public class InstallCommand(OperatorConfiguration config, SharedInformerFactory 
                 });
                 x.WithTemplate(temp =>
                 {
+                    temp.WithLabel("operator", config.Name);
                     temp.WithSpec(s =>
                     {
                         s.WithServiceAccountName("default");
@@ -125,7 +126,7 @@ public class InstallCommand(OperatorConfiguration config, SharedInformerFactory 
                             }));
                         s.AddContainer(config.Name, c =>
                         {
-                            c.AddEnvFromObjectField("NAMESPACE", "metadata.name");
+                            c.AddEnvFromObjectField("NAMESPACE", "metadata.namespace");
                             c.WithImage(config.Container.FullImage);
                             c.WithResources(
                                 limits: new()
@@ -139,33 +140,31 @@ public class InstallCommand(OperatorConfiguration config, SharedInformerFactory 
                                     ["memory"] = new ResourceQuantity("512Mi")
                                 });
                             c.WithSecurityContext(b =>
-                             {
-                                 b.WithAllowPrivilegeEscalation(false);
-                                 b.WithRunAsNonRoot();
-                                 b.WithRunAsUser(2024);
-                                 b.WithRunAsGroup(2024);
-                                 b.WithCapabilities(cap =>
-                                 {
-                                     cap.Drop("ALL");
-                                 });
-                             });
+                            {
+                                b.WithAllowPrivilegeEscalation(false);
+                                b.WithRunAsNonRoot();
+                                b.WithRunAsUser(2024);
+                                b.WithRunAsGroup(2024);
+                                b.WithCapabilities(cap =>
+                                {
+                                    cap.Drop("ALL");
+                                });
+                            });
                         });
                     });
                 });
-            });
-        customize?.Invoke(deployment);
-        return deployment.Build();
-    }
+            })
+            .Add(x => config.Install.ConfigureDeployment?.Invoke(x))
+        .Build();
 
     internal static V1ClusterRoleBinding CreateClusterRoleBinding(OperatorConfiguration config)
-    {
-        var clusterrolebinding = KubernetesObjectBuilder.Create<V1ClusterRoleBinding>()
+        => KubernetesObjectBuilder.Create<V1ClusterRoleBinding>()
             .WithName($"{config.Name}-role-binding")
             .WithRoleRef("rbac.authorization.k8s.io", "ClusterRole", $"{config.Name}-role")
-            .WithSubject(kind: "ServiceAccount", name: "default", ns: config.Namespace);
+            .WithSubject(kind: "ServiceAccount", name: "default", ns: config.Namespace)
+            .Add(x => config.Install.ConfigureClusterRoleBinding?.Invoke(x))
+            .Build();
 
-        return clusterrolebinding.Build();
-    }
 
     internal static V1ClusterRole CreateClusterRole(OperatorConfiguration config, IEnumerable<Type> resources)
     {
@@ -202,6 +201,8 @@ public class InstallCommand(OperatorConfiguration config, SharedInformerFactory 
                  .WithVerbs("get", "update", "patch")
             );
         }
+
+        clusterrole.Add(x => config.Install.ConfigureClusterRole?.Invoke(x));
 
         return clusterrole.Build();
     }

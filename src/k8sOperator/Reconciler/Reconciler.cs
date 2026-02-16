@@ -39,6 +39,8 @@ public class Reconciler<T> : IReconciler
         _cts = CancellationTokenSource.CreateLinkedTokenSource(token);
         Logger.LogInformation("Reconciler started.");
 
+        long? _lastgen = null;
+
         while (!_cts.IsCancellationRequested)
         {
             try
@@ -46,11 +48,19 @@ public class Reconciler<T> : IReconciler
                 var resource = await Queue.DequeueAsync(_cts.Token);
                 using var scope = Services.CreateScope();
                 var context = new ReconcileContext<T>(scope.ServiceProvider, Informer, Queue, resource, _cts.Token);
+
+                context.Logger.LogInformation("Reconciling {Type} - {Name}", typeof(T).Name, context.Resource.Metadata.Name);
                 await _reconcile(context);
+                await context.SaveChangesAsync();
+                context.Logger.LogInformation("Finished reconciling {Type} - {Name}", typeof(T).Name, context.Resource.Metadata.Name);
             }
             catch (OperationCanceledException)
             {
-
+                // Graceful shutdown
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error occurred while reconciling resource {ResourceName}", typeof(T).Name);
             }
         }
 
@@ -60,6 +70,7 @@ public class Reconciler<T> : IReconciler
     public Task StopAsync(CancellationToken token)
     {
         _cts?.Cancel();
+        _cts?.Dispose();
         return Task.CompletedTask;
     }
 }

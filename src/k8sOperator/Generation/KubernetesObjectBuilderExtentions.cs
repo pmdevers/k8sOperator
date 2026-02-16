@@ -1,5 +1,4 @@
-﻿using k8s;
-using k8s.Models;
+﻿using k8s.Models;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
@@ -85,7 +84,6 @@ public static class KubernetesObjectBuilderExtentions
         }
     }
 
-
     extension<T>(IObjectBuilder<T> builder)
         where T : V1DeploymentSpec
     {
@@ -113,8 +111,58 @@ public static class KubernetesObjectBuilderExtentions
             {
                 x.Template ??= new V1PodTemplateSpec();
                 var templateBuilder = ObjectBuilder.Create(x.Template);
+                templateBuilder.Add(x => x.Metadata ??= new V1ObjectMeta());
                 customize(templateBuilder);
                 x.Template = templateBuilder.Build();
+            });
+            return builder;
+        }
+    }
+
+    extension<T>(IObjectBuilder<T> builder)
+        where T : V1Service
+    {
+        public IObjectBuilder<T> WithSpec(Action<IObjectBuilder<V1ServiceSpec>> customize)
+        {
+            builder.Add(x =>
+            {
+                x.Spec ??= new V1ServiceSpec();
+                var specBuilder = ObjectBuilder.Create(x.Spec);
+                customize(specBuilder);
+                x.Spec = specBuilder.Build();
+            });
+            return builder;
+        }
+    }
+
+    extension<T>(IObjectBuilder<T> builder)
+        where T : V1ServiceSpec
+    {
+        public IObjectBuilder<T> WithType(string type)
+        {
+            builder.Add(x => x.Type = type);
+            return builder;
+        }
+        public IObjectBuilder<T> WithPort(int port, int targetPort, string protocol = "TCP")
+        {
+            builder.Add(x =>
+            {
+                x.Ports ??= [];
+                x.Ports.Add(new V1ServicePort
+                {
+                    Port = port,
+                    TargetPort = targetPort,
+                    Protocol = protocol
+                });
+            });
+            return builder;
+        }
+        public IObjectBuilder<T> WithSelector(string key, string value)
+        {
+            builder.Add(x =>
+            {
+                x.Selector ??= new Dictionary<string, string>();
+                x.Selector[key] = value;
             });
             return builder;
         }
@@ -457,13 +505,14 @@ public static class KubernetesObjectBuilderExtentions
             return builder;
         }
 
-        public IObjectBuilder<T> WithSubResources(Action<IObjectBuilder<V1CustomResourceSubresources>>? customize = null)
+        public IObjectBuilder<T> WithSubResources()
         {
             builder.Add(x =>
             {
-                var subResourcesBuilder = ObjectBuilder.Create(x.Subresources ?? new());
-                customize?.Invoke(subResourcesBuilder);
-                x.Subresources = subResourcesBuilder.Build();
+                x.Subresources = new V1CustomResourceSubresources
+                {
+                    Status = new(),
+                };
             });
             return builder;
         }
@@ -508,7 +557,7 @@ public static class KubernetesObjectBuilderExtentions
 
             s.OfType("object");
 
-            var status = type.GetProperty("status")?.PropertyType;
+            var status = type.GetProperty("Status")?.PropertyType;
             var spec = type.GetProperty("Spec")?.PropertyType;
 
             if (status is not null)
@@ -545,7 +594,7 @@ public static class KubernetesObjectBuilderExtentions
                 var propBuilder = ObjectBuilder.Create(new V1JSONSchemaProps());
                 customize(propBuilder);
                 x.Properties ??= new Dictionary<string, V1JSONSchemaProps>();
-                x.Properties[name] = propBuilder.Build();
+                x.Properties[$"{name[..1].ToLowerInvariant()}{name[1..]}"] = propBuilder.Build();
             });
             return builder;
         }

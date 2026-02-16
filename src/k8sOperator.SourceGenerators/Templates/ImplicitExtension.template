@@ -6,7 +6,10 @@ using k8s.Operator.Generation;
 
 namespace {{NAMESPACE}};
 
-public static class UpdateBuilderExtensions
+public static class {{EXTENSION_NAME}}
 {
+    extension(IObjectBuilder<{{CLASS_NAME}}> builder)
+    {
 {{METHODS}}
+    }
 }

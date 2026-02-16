@@ -5,19 +5,13 @@ using Microsoft.AspNetCore.StaticFiles;
 namespace k8s.Frontman.Features.Releases;
 
 public class ReleaseMiddleware(RequestDelegate next,
-    IInformer<Release> releases,
-    IInformer<Provider> providers)
+    IInformer<V1Release> releases, IInformer<V1Provider> providers)
 {
     public async Task InvokeAsync(HttpContext context)
     {
-        var segments = (context.Request.Path.Value ?? string.Empty)
-            .Split('/', StringSplitOptions.RemoveEmptyEntries)
-            .ToList();
+        string url = context.Request.Path.Value ?? string.Empty;
 
-        var releaseName = segments.FirstOrDefault() ?? string.Empty;
-
-        var release = releases.List()
-            .FirstOrDefault(x => x.Spec.Url == releaseName);
+        var release = FindRelease(url);
 
         if (release == null)
         {
@@ -25,17 +19,17 @@ public class ReleaseMiddleware(RequestDelegate next,
             return;
         }
 
-        var newPath = string.Join('/', ["", release.Status?.CurrentVersion, .. segments.Skip(1)]);
+        var remainder = url[release.Spec.Url.Length..];
+        var newPath = string.Join('/', ["", release.Status?.CurrentVersion, remainder]);
 
-        var providerName = release.Spec.Provider;
-        var provider = providers.Get(providerName, release.Metadata.NamespaceProperty);
+        var provider = providers.Indexer.Get(release.Spec.Provider, release.Metadata.NamespaceProperty);
 
         if (provider is null)
         {
             return;
         }
 
-        var fileProvider = (provider.Spec.File?.Create() ?? provider.Spec.AzureBlob?.Create());
+        var fileProvider = provider.GetFileProvider();
 
         if (fileProvider is null)
         {
@@ -47,7 +41,7 @@ public class ReleaseMiddleware(RequestDelegate next,
         // If path is a directory or doesn't exist, try index.html
         if (!fileInfo.Exists || fileInfo.IsDirectory)
         {
-            var indexPath = newPath.TrimEnd('/') + "/index.html";
+            var indexPath = string.Join('/', ["", release.Status?.CurrentVersion, "index.html"]);
             var indexFileInfo = fileProvider.GetFileInfo(indexPath);
 
             if (indexFileInfo.Exists && !indexFileInfo.IsDirectory)
@@ -81,5 +75,30 @@ public class ReleaseMiddleware(RequestDelegate next,
 
         using var stream = fileInfo.CreateReadStream();
         await stream.CopyToAsync(context.Response.Body);
+    }
+
+    private V1Release? FindRelease(string urlPath)
+    {
+        var segments = urlPath.Split('/', StringSplitOptions.RemoveEmptyEntries).ToList();
+
+        while (segments.Count > 0)
+        {
+            var currentPath = "/" + string.Join('/', segments);
+
+            var match = releases.List().FirstOrDefault(release =>
+                release.Spec.Url.Equals(currentPath, StringComparison.OrdinalIgnoreCase));
+
+            if (match != null)
+            {
+                return match;
+            }
+
+            // Remove last segment and try again
+            segments.RemoveAt(segments.Count - 1);
+        }
+
+        // Try root path as final fallback
+        return releases.List().FirstOrDefault(release =>
+            release.Spec.Url.Equals("/", StringComparison.OrdinalIgnoreCase));
     }
 }

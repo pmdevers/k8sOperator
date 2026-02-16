@@ -10,7 +10,7 @@ public static class ProviderFeature
     {
         public void MapProvider()
         {
-            app.ReconcilerFor<Provider>(ProviderReconciler.ReconcileAsync);
+            app.AddReconciler<V1Provider>(ProviderReconciler.ReconcileAsync);
         }
     }
 }

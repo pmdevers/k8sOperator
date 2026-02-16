@@ -17,7 +17,7 @@ public class OperatorHostedService : IHostedService
     private readonly LeaderElector _leaderElector;
     private readonly OperatorConfiguration _configuration;
     private Task? _leaderElectionTask;
-    private CancellationTokenSource? _leaderElectionCts;
+    private CancellationTokenSource _leaderElectionCts = new();
 
     public OperatorHostedService(
         IKubernetes client,
@@ -35,7 +35,7 @@ public class OperatorHostedService : IHostedService
         var leaseLock = new LeaseLock(
             client: _client,
             @namespace: config.Namespace,
-            name: config.Lease.LeaseName,
+            name: config.Lease.LeaseName ?? $"{config.Name}-leader-election",
             identity: Environment.MachineName
         );
 
@@ -51,7 +51,8 @@ public class OperatorHostedService : IHostedService
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Starting {operator} - {version} hosted service - beginning leader election", _configuration.Name, _configuration.Version);
+        _logger.LogInformation("Starting {operator} - {version} hosted service - beginning leader election",
+            _configuration.Name, _configuration.Version);
         _leaderElector.OnStartedLeading += OnStartedLeading;
         _leaderElector.OnStoppedLeading += OnStoppedLeading;
         _leaderElector.OnNewLeader += OnNewLeader;
@@ -62,7 +63,7 @@ public class OperatorHostedService : IHostedService
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
-        _leaderElectionCts?.Cancel();
+        await _leaderElectionCts.CancelAsync();
 
         if (_leaderElectionTask != null)
         {
@@ -72,10 +73,11 @@ public class OperatorHostedService : IHostedService
             }
             catch (OperationCanceledException)
             {
+                // gracefull shutdown
             }
         }
 
-        _leaderElectionCts?.Dispose();
+        _leaderElectionCts.Dispose();
     }
 
     private void OnStartedLeading()

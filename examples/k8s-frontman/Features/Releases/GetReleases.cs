@@ -5,8 +5,9 @@ namespace k8s.Frontman.Features.Releases;
 
 public static class GetReleases
 {
-    public static Results<Ok<ReleaseResponse[]>, BadRequest> Handle(IInformer<Release> releases)
+    public static Results<Ok<ReleaseResponse[]>, BadRequest> Handle(SharedInformerFactory factory)
     {
+        var releases = factory.GetInformer<V1Release>();
         var releasesList = releases.List()
             .Select(x => new ReleaseResponse(x.Metadata.Name, x.Spec.Url, x.Status?.CurrentVersion ?? "unknown", x.Status?.PreviousVersion ?? "unknown"))
             .ToArray();

@@ -69,11 +69,14 @@
 	</PropertyGroup>
 	
 	<ItemGroup>
-		<AssemblyAttribute Include="k8s.Operator.Metadata.OperatorNameAttribute">
+		<AssemblyAttribute Include="k8s.Operator.Configuration.OperatorNameAttribute">
 			<_Parameter1>$(OperatorName)</_Parameter1>
 		</AssemblyAttribute>
-		<AssemblyAttribute Include="k8s.Operator.Metadata.NamespaceAttribute">
+		<AssemblyAttribute Include="k8s.Operator.Configuration.OperatorNamespaceAttribute">
 			<_Parameter1>$(OperatorNamespace)</_Parameter1>
+		</AssemblyAttribute>
+		<AssemblyAttribute Include="k8s.Operator.Configuration.OperatorVersionAttribute">
+			<_Parameter1>$(FileVersion)</_Parameter1>
 		</AssemblyAttribute>
 	</ItemGroup>
 
@@ -82,31 +85,6 @@
 							   Condition="Exists('$(MSBuildThisFileDirectory)TrimmedRoots.xml')" />
 	</ItemGroup>
 	
-	<!-- Add DockerImageAttribute dynamically to ensure Version is available -->
-	<Target Name="AddDockerImageAttribute" BeforeTargets="GetAssemblyAttributes;CoreCompile">
-		<PropertyGroup>
-			<_ContainerImageTagValue Condition=" '$(ContainerImageTag)' == '' ">$(FileVersion)</_ContainerImageTagValue>
-			<_ContainerImageTagValue Condition=" '$(ContainerImageTag)' != '' ">$(ContainerImageTag)</_ContainerImageTagValue>
-			
-			<_ContainerRepositorySuffix Condition=" '$(ContainerRepository)' == '' ">$(Company)/</_ContainerRepositorySuffix>
-			<_ContainerRepositorySuffix Condition=" '$(ContainerRepository)' != '' ">$(ContainerRepository)/</_ContainerRepositorySuffix>
-
-			<!-- Add hyphen before ContainerFamily if it's not empty -->
-			<_ContainerFamilySuffix Condition=" '$(ContainerFamily)' != '' ">-$(ContainerFamily)</_ContainerFamilySuffix>
-			<_ContainerFamilySuffix Condition=" '$(ContainerFamily)' == '' "></_ContainerFamilySuffix>
-			
-			<_FullContainerTag>$(_ContainerImageTagValue)$(_ContainerFamilySuffix)</_FullContainerTag>
-			<_FullContainerRepository>$(_ContainerRepositorySuffix)$(OperatorName)</_FullContainerRepository>
-		</PropertyGroup>
-		<ItemGroup>
-			<AssemblyAttribute Include="k8s.Operator.Metadata.DockerImageAttribute">
-				<_Parameter1>$(ContainerRegistry)</_Parameter1>
-				<_Parameter2>$(_FullContainerRepository)</_Parameter2>
-				<_Parameter3>$(_FullContainerTag)</_Parameter3>
-			</AssemblyAttribute>
-		</ItemGroup>
-	</Target>
-
 	<!-- Create Properties folder if it doesn't exist -->
 	<Target Name="EnsurePropertiesFolder" BeforeTargets="CreateOperatorLaunchSettings" Condition=" '$(CreateOperatorLaunchSettings)' == 'true' ">
 		<MakeDir Directories="$(MSBuildProjectDirectory)\Properties" Condition="!Exists('$(MSBuildProjectDirectory)\Properties')" />

@@ -7,6 +7,7 @@ using k8s.Operator.Informer;
 using k8s.Operator.Reconciler;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 
 namespace k8s.Operator;
@@ -15,7 +16,7 @@ public static class OperatorExtensions
 {
     extension(IServiceCollection services)
     {
-        public IServiceCollection AddOpperator(Action<OperatorConfiguration>? configure = null)
+        public IServiceCollection AddOperator(Action<OperatorConfiguration>? configure = null)
         {
             services.AddSingleton<IKubernetes>(sp =>
             {
@@ -23,13 +24,16 @@ public static class OperatorExtensions
                 return new Kubernetes(config);
             });
 
+            services.TryAddTransient(typeof(IInformer<>), typeof(InformerFactory<>));
+
             services.AddSingleton(sp =>
             {
-                var registry = new CommandRegistry(sp);
-                registry.RegisterCommand(typeof(HelpCommand));
-                registry.RegisterCommand(typeof(OperatorCommand));
-                registry.RegisterCommand(typeof(VersionCommand));
-                registry.RegisterCommand(typeof(InstallCommand));
+                var registry = new CommandRegistry(sp)
+                    .Add<HelpCommand>()
+                    .Add<OperatorCommand>()
+                    .Add<VersionCommand>()
+                    .Add<InstallCommand>()
+                    .Add<CreateCommand>();
                 return registry;
             });
 

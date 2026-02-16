@@ -8,11 +8,11 @@ builder.Services.AddLogging();
 
 builder.Services.AddOperator(x =>
 {
-    x.Operator.Name = "simple-operator";
-    x.Operator.Namespace = "default";
-    x.Operator.ContainerRegistry = "ghcr.io";
-    x.Operator.ContainerRepository = "myorg/simple-operator";
-    x.Operator.ContainerTag = "v1.0.0";
+    x.Name = "simple-operator";
+    x.Namespace = "default";
+    x.Container.Registry = "ghcr.io";
+    x.Container.Repository = "myorg/simple-operator";
+    x.Container.Tag = "v1.0.0";
 });
 
 var app = builder.Build();

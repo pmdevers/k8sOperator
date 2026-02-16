@@ -1,5 +1,4 @@
-﻿using k8s.Frontman.Features.Releases;
-using k8s.Operator;
+﻿using k8s.Operator;
 
 namespace k8s.Frontman.Features.Releases;
 
@@ -14,7 +13,7 @@ public static class ReleaseFeature
 
             app.MapGet("/releases", GetReleases.Handle);
 
-            app.ReconcilerFor<Release>(ReleaseReconciler.ReconcileAsync);
+            app.AddReconciler<V1Release>(ReleaseReconciler.ReconcileAsync);
         }
     }
 }

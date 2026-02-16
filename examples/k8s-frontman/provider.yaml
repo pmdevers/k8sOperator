@@ -1,0 +1,16 @@
+apiVersion: frontman.io/v1
+kind: Provider
+metadata:
+  name: provider
+  namespace: default
+spec:
+  type: File
+  file:
+    path: ""
+  azureBlob:
+    connectionString: ""
+    containerName: ""
+  interval: 5m
+status:
+  numberOfReleases: 0
+  versions: []

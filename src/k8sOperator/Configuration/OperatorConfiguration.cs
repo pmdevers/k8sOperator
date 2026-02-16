@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using k8s.Models;
+using System.Text.RegularExpressions;
 
 namespace k8s.Operator.Configuration;
 
@@ -8,8 +9,9 @@ public partial record OperatorConfiguration
     public string Group { get; set; } = "simplicity.io";
     public string Version { get; set; } = "0.1.0";
     public string Namespace { get; set; } = "default";
-    public LeaseConfiguration Lease { get; set; } = new LeaseConfiguration();
-    public ContainerConfiguration Container { get; set; } = new ContainerConfiguration();
+    public LeaseConfiguration Lease { get; set; } = new();
+    public ContainerConfiguration Container { get; set; } = new();
+    public InstallConfiguration Install { get; set; } = new();
 
     public void Validate()
     {
@@ -50,12 +52,24 @@ public partial record OperatorConfiguration
     }
     public class LeaseConfiguration
     {
-        public string LeaseName { get; set; } = "my-operator-leader-election";
+        public string? LeaseName { get; set; }
         public TimeSpan LeaseDuration { get; set; } = TimeSpan.FromSeconds(30);
         public TimeSpan RenewDeadline { get; set; } = TimeSpan.FromSeconds(20);
         public TimeSpan RetryPeriod { get; set; } = TimeSpan.FromSeconds(10);
     }
 
+    public class InstallConfiguration
+    {
+        public List<Type> Resources { get; set; } = [];
+        public Action<V1Namespace>? ConfigureNamespace { get; set; }
+        public Action<V1Deployment>? ConfigureDeployment { get; set; }
+        public Action<V1ClusterRoleBinding>? ConfigureClusterRoleBinding { get; set; }
+        public Action<V1ClusterRole>? ConfigureClusterRole { get; set; }
+        public List<IKubernetesObject> AdditionalObjects { get; set; } = [];
+
+    }
+
     [GeneratedRegex(@"^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$", RegexOptions.Compiled)]
     private static partial Regex KubernetesName();
 }
+

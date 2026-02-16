@@ -1,7 +1,8 @@
-        public IObjectBuilder<T> WithSpec(Action<IObjectBuilder<{{SPEC_TYPE}}>> configure)
+        public IObjectBuilder<{{CLASS_NAME}}> WithSpec(Action<IObjectBuilder<{{SPEC_TYPE_NAME}}>> configure)
         {
             builder.Add(x =>
             {
+                x.Spec ??= new();
                 var specBuilder = ObjectBuilder.Create(x.Spec);
                 configure(specBuilder);
                 x.Spec = specBuilder.Build();

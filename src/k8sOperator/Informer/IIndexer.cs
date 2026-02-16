@@ -1,5 +1,4 @@
-﻿using k8s;
-using k8s.Models;
+﻿using k8s.Models;
 using System.Collections.Concurrent;
 
 namespace k8s.Operator.Informer;
@@ -11,6 +10,7 @@ public interface IIndexer<T>
     void Delete(T item);
     IEnumerable<T> List();
     T? Get(T obj);
+    T? Get(string name, string? ns = null);
     void Replace(IEnumerable<T> items);
 }
 
@@ -40,6 +40,13 @@ public class InMemoryIndexer<T> : IIndexer<T>
     public T? Get(T item)
     {
         var key = ResourceKey.Create(item);
+        return _set.TryGetValue(key, out var value) ?
+            value : default;
+    }
+
+    public T? Get(string name, string? ns = null)
+    {
+        var key = new ResourceKey(name, ns);
         return _set.TryGetValue(key, out var value) ?
             value : default;
     }

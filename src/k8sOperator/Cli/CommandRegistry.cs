@@ -9,13 +9,10 @@ public class CommandRegistry(IServiceProvider serviceProvider)
 
     public IEnumerable<Type> All() => _commands.Values.Distinct();
 
-    public void RegisterCommand(Type commandType)
+    public CommandRegistry Add<T>()
+        where T : IOperatorCommand
     {
-        if (!typeof(IOperatorCommand).IsAssignableFrom(commandType))
-        {
-            throw new ArgumentException($"Command type must implement {nameof(IOperatorCommand)}", nameof(commandType));
-        }
-
+        var commandType = typeof(T);
         var attribute = commandType.GetCustomAttribute<OperatorCommandAttribute>()
             ?? throw new ArgumentException($"Command type must have {nameof(OperatorCommandAttribute)}", nameof(commandType));
 
@@ -25,6 +22,7 @@ public class CommandRegistry(IServiceProvider serviceProvider)
         {
             _commands[alias] = commandType;
         }
+        return this;
     }
 
     public IOperatorCommand? GetCommand(string name)

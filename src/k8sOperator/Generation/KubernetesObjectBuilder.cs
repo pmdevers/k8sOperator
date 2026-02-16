@@ -1,6 +1,4 @@
-﻿using k8s;
-
-namespace k8s.Operator.Generation;
+﻿namespace k8s.Operator.Generation;
 
 public class KubernetesObjectBuilder
 {
@@ -10,7 +8,7 @@ public class KubernetesObjectBuilder
         return Create(new TResource());
     }
     public static IObjectBuilder<TResource> Create<TResource>(TResource instance)
-        where TResource : IKubernetesObject, new()
+        where TResource : IKubernetesObject
     {
         var builder = ObjectBuilder.Create(instance);
 
