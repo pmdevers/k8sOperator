@@ -5,6 +5,7 @@
     <Project Path="examples/simple-operator/simple-operator.csproj" Id="388c9880-01c3-4c9b-a75d-1c52821255a9" />
   </Folder>
   <Folder Name="/src/">
+    <File Path="src/Directory.Build.props" />
     <Project Path="src/k8sOperator.BuildTasks/k8sOperator.BuildTasks.csproj" Id="2f253022-d64e-41f2-b70d-e57d873e70cb" />
     <Project Path="src/k8sOperator.SourceGenerators/k8sOperator.SourceGenerators.csproj" />
     <Project Path="src/k8sOperator/k8sOperator.csproj" Id="d84c3fff-673a-4b05-9c92-950ffe42fdd4" />

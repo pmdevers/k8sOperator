@@ -10,7 +10,6 @@ namespace k8s.Operator.Hosting;
 
 public class OperatorHostedService : IHostedService
 {
-    private readonly IKubernetes _client;
     private readonly ILogger<OperatorHostedService> _logger;
     private readonly SharedInformerFactory _informerFactory;
     private readonly ReconcilerFactory _reconcilerFactory;
@@ -26,14 +25,13 @@ public class OperatorHostedService : IHostedService
         ReconcilerFactory reconcilerFactory,
         OperatorConfiguration config)
     {
-        _client = client;
         _logger = logger;
         _informerFactory = informerFactory;
         _reconcilerFactory = reconcilerFactory;
         _configuration = config;
 
         var leaseLock = new LeaseLock(
-            client: _client,
+            client: client,
             @namespace: config.Namespace,
             name: config.Lease.LeaseName ?? $"{config.Name}-leader-election",
             identity: Environment.MachineName
@@ -51,7 +49,7 @@ public class OperatorHostedService : IHostedService
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Starting {operator} - {version} hosted service - beginning leader election",
+        _logger.LogInformation($"Starting {{Operator}} - {{Version}} hosted service - beginning leader election",
             _configuration.Name, _configuration.Version);
         _leaderElector.OnStartedLeading += OnStartedLeading;
         _leaderElector.OnStoppedLeading += OnStoppedLeading;
@@ -129,7 +127,7 @@ public class OperatorHostedService : IHostedService
         }
         else
         {
-            _logger.LogInformation("New leader elected: {identity}", identity);
+            _logger.LogInformation($"New leader elected: {{Identity}}", identity);
         }
     }
 }

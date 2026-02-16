@@ -1,6 +1,6 @@
 ﻿namespace k8s.Operator.Generation;
 
-public class KubernetesObjectBuilder
+public static class KubernetesObjectBuilder
 {
     public static IObjectBuilder<TResource> Create<TResource>()
         where TResource : IKubernetesObject, new()

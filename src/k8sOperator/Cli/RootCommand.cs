@@ -1,25 +1,19 @@
-﻿using Microsoft.Extensions.Hosting;
+﻿namespace k8s.Operator.Cli;
 
-namespace k8s.Operator.Cli;
-
-public class RootCommand(IHost host, CommandRegistry registry) : IOperatorCommand
+public class RootCommand(CommandRegistry registry) : IOperatorCommand
 {
-    public Task ExecuteAsync(string[] args)
+    public async Task<int> ExecuteAsync(string[] args)
     {
-        if (args.Length == 0)
-        {
-            var help = registry.GetCommand("help");
-            return help?.ExecuteAsync(args) ?? Task.CompletedTask;
-        }
-
-        var commandName = args[0];
+        var commandName = args.Length > 0 ? args[0] : "help";
         var command = registry.GetCommand(commandName);
 
         if (command == null)
         {
-            // Handle unknown command scenario
-            return Task.CompletedTask;
+            Console.WriteLine($"Unknown command: {command}");
+            Console.WriteLine();
+
+            return 1;
         }
-        return command.ExecuteAsync([.. args.Skip(1)]);
+        return await command.ExecuteAsync([.. args.Skip(1)]);
     }
 }

@@ -17,12 +17,11 @@ public partial class ResyncIntervalAttribute() : PatternAttribute(Resync().ToStr
         }
 
         var totalMilliseconds = 0.0;
-
-        foreach (Match match in matches)
+        foreach (var (value, unit) in from Match match in matches
+                                      let value = double.Parse(match.Groups[1].Value)
+                                      let unit = match.Groups[2].Value
+                                      select (value, unit))
         {
-            var value = double.Parse(match.Groups[1].Value);
-            var unit = match.Groups[2].Value;
-
             totalMilliseconds += unit switch
             {
                 "ms" => value,

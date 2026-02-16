@@ -9,7 +9,7 @@ public interface IIndexer<T>
     void AddOrUpdate(T item);
     void Delete(T item);
     IEnumerable<T> List();
-    T? Get(T obj);
+    T? Get(T item);
     T? Get(string name, string? ns = null);
     void Replace(IEnumerable<T> items);
 }

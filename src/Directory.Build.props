@@ -8,11 +8,11 @@
 		<GenerateSBOM>true</GenerateSBOM>
 
 		<Description>
-			/// TODO
-		</Description>
+      Kubernetes operator framework for .NET - Build custom controllers with CRDs, informers, reconcilers, and leader election. Supports trimmed single-file deployment and self-updating CLI.
+    </Description>
 		<PackageTags>
-s
-		</PackageTags>
+      kubernetes;k8s;operator;operator-framework;controller;reconciler;custom-resource;crd;cloud-native;dotnet;csharp;kubernetes-operator;operator-sdk;kubernetes-controller;k8s-operator;container-orchestration;cluster-management;resource-management
+    </PackageTags>
 
 		<Authors>Patrick Evers</Authors>
 		<Owners>$(CompanyName)</Owners>
@@ -30,7 +30,7 @@ s
 		<RepositoryUrl>https://github.com/pmdevers/k8sOperator</RepositoryUrl>
 
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<GenerateDocumentationFile>false</GenerateDocumentationFile>
 
 	</PropertyGroup>
 

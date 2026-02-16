@@ -30,23 +30,24 @@
 		<Message Importance="high" Text="k8sOperator: OperatorName=$(OperatorName)" />
 		<Message Importance="high" Text="k8sOperator: OperatorNamespace=$(OperatorNamespace)" />
 		<Message Importance="high" Text="k8sOperator: ContainerRegistry=$(ContainerRegistry)" />
-		<Message Importance="high" Text="k8sOperator: ContainerRepository=$(ContainerRepository)" />
-		<Message Importance="high" Text="k8sOperator: FileVersion=$(FileVersion)" />
-		<Message Importance="high" Text="k8sOperator: ContainerImageTag=$(ContainerImageTag)" />
-		<Message Importance="high" Text="k8sOperator: ContainerFamily=$(ContainerFamily)" />
+		<Message Importance="high" Text="k8sOperator: ContainerOrganization=$(ContainerOrganization)" />
+		<Message Importance="high" Text="k8sOperator: Version=$(Version)" />
+		<Message Importance="high" Text="k8sOperator: ContainerTag=$(ContainerTag)" />
+		<Message Importance="high" Text="k8sOperator: ContainerDigest=$(ContainerDigest)" />
 		
 		<Message Importance="high" Text="k8sOperator: CreateOperatorLaunchSettings=$(CreateOperatorLaunchSettings)" />
 		<Message Importance="high" Text="k8sOperator: PublishSingleFileExecutable=$(PublishSingleFileExecutable)" />
 	</Target>
 
 	<PropertyGroup>
-		<OperatorName Condition=" '$(OperatorName)' == '' ">$(MSBuildProjectName.Replace(" ", "_").ToLower())</OperatorName>
-		<OperatorNamespace Condition=" '$(OperatorNamespace)' == '' ">$(MSBuildProjectName.Replace(" ", "_").ToLower())-system</OperatorNamespace>
+		<OperatorName Condition=" '$(OperatorName)' == '' ">$(MSBuildProjectName.Replace(" ", "-").ToLower())</OperatorName>
+		<OperatorNamespace Condition=" '$(OperatorNamespace)' == '' ">$(MSBuildProjectName.Replace(" ", "-").ToLower())-system</OperatorNamespace>
 
-		<ContainerRegistry Condition=" '$(ContainerRegistry)' == '' ">ghcr.io</ContainerRegistry>
-		<ContainerRepository Condition=" '$(ContainerRepository)' == '' ">$(Company)/$(OperatorName)</ContainerRepository>
-		<ContainerImageTag Condition=" '$(ContainerImageTag)' == '' ">$(FileVersion)</ContainerImageTag>
-		<ContainerFamily Condition=" '$(ContainerFamily)' == '' "></ContainerFamily>
+		<ContainerRegistry Condition=" '$(ContainerRegistry)' == '' "></ContainerRegistry>
+		<ContainerOrganization Condition=" '$(ContainerOrganization)' == '' ">$(Company)</ContainerOrganization>
+		<ContainerImage Condition=" '$(ContainerImage)' == '' ">$(MSBuildProjectName.Replace(" ", "-").ToLower())</ContainerImage>
+		<ContainerTag Condition=" '$(ContainerTag)' == '' ">$(Version)</ContainerTag>
+		<ContainerDigest Condition=" '$(ContainerDigest)' == '' "></ContainerDigest>
 		
 		<!-- Allow users to opt-in to including launch settings -->
 		<CreateOperatorLaunchSettings Condition=" '$(CreateOperatorLaunchSettings)' == '' ">false</CreateOperatorLaunchSettings>
@@ -76,7 +77,14 @@
 			<_Parameter1>$(OperatorNamespace)</_Parameter1>
 		</AssemblyAttribute>
 		<AssemblyAttribute Include="k8s.Operator.Configuration.OperatorVersionAttribute">
-			<_Parameter1>$(FileVersion)</_Parameter1>
+			<_Parameter1>$(Version)</_Parameter1>
+		</AssemblyAttribute>
+		<AssemblyAttribute Include="k8s.Operator.Configuration.ContainerAttribute">
+			<_Parameter1>$(ContainerRegistry)</_Parameter1>
+			<_Parameter2>$(ContainerOrganization)</_Parameter2>
+			<_Parameter3>$(ContainerImage)</_Parameter3>
+			<_Parameter4>$(ContainerTag)</_Parameter4>
+			<_Parameter5>$(ContainerDigest)</_Parameter5>
 		</AssemblyAttribute>
 	</ItemGroup>
 

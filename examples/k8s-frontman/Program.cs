@@ -17,11 +17,6 @@ builder.Services.AddResponseCompression();
 
 builder.Services.AddOperator(x =>
 {
-    x.Name = "k8s-frontman";
-    x.Namespace = "default";
-    x.Container.Registry = "ghcr.io";
-    x.Container.Repository = "pmdevers/k8s-frontman";
-
     x.WithDeployment();
     x.WithService();
 

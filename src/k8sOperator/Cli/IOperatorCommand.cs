@@ -2,5 +2,5 @@
 
 public interface IOperatorCommand
 {
-    Task ExecuteAsync(string[] args);
+    Task<int> ExecuteAsync(string[] args);
 }

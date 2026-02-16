@@ -1,7 +1,8 @@
-﻿using Microsoft.CodeAnalysis;
+﻿#nullable enable
+
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
@@ -25,7 +26,7 @@ public class UpdateBuilderExtensionsGenerator : IIncrementalGenerator
 
         // Generate the extensions
         context.RegisterSourceOutput(compilationAndClasses,
-            static (spc, source) => Execute(source.Left, source.Right!, spc));
+            static (spc, source) => Execute(source.Right!, spc));
     }
 
     private static bool IsCandidateType(SyntaxNode node)
@@ -88,7 +89,6 @@ public class UpdateBuilderExtensionsGenerator : IIncrementalGenerator
     }
 
     private static void Execute(
-        Compilation compilation,
         ImmutableArray<ClassInfo?> classes,
         SourceProductionContext context)
     {
@@ -115,9 +115,9 @@ public class UpdateBuilderExtensionsGenerator : IIncrementalGenerator
     private static string GenerateExtensionForClass(ClassInfo classInfo)
     {
         // Load templates
-        var extensionTemplate = TemplateReader.ReadTemplate("ImplicitExtension.template");
-        var specMethodTemplate = TemplateReader.ReadTemplate("ImplicitWithSpecMethod.template");
-        var statusMethodTemplate = TemplateReader.ReadTemplate("ImplicitWithStatusMethod.template");
+        var extensionTemplate = TemplateReader.ReadTemplate("Extension.template");
+        var specMethodTemplate = TemplateReader.ReadTemplate("WithSpec.template");
+        var statusMethodTemplate = TemplateReader.ReadTemplate("WithStatus.template");
 
         // Generate all methods
         var methods = new StringBuilder();
@@ -157,8 +157,7 @@ public class UpdateBuilderExtensionsGenerator : IIncrementalGenerator
 
         return result;
     }
-
-    private record ClassInfo(
+    private sealed record ClassInfo(
         string Namespace,
         string ClassName,
         bool HasSpec,

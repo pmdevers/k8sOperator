@@ -6,8 +6,7 @@ namespace k8s.Operator.Configuration;
 public partial record OperatorConfiguration
 {
     public string Name { get; set; } = "my-operator";
-    public string Group { get; set; } = "simplicity.io";
-    public string Version { get; set; } = "0.1.0";
+    public string Version { get; set; } = "0.0.1";
     public string Namespace { get; set; } = "default";
     public LeaseConfiguration Lease { get; set; } = new();
     public ContainerConfiguration Container { get; set; } = new();
@@ -15,21 +14,23 @@ public partial record OperatorConfiguration
 
     public void Validate()
     {
-        if (string.IsNullOrWhiteSpace(Name))
-            throw new ArgumentException("Operator name must be provided.", nameof(Name));
+        ArgumentException.ThrowIfNullOrWhiteSpace(Name);
+        ArgumentException.ThrowIfNullOrWhiteSpace(Version);
+        ArgumentException.ThrowIfNullOrWhiteSpace(Namespace);
 
-        if (!IsValidKubernetesName(Name))
+        ValidateKubernetesName(Name, nameof(Name), "Operator name");
+        ValidateKubernetesName(Namespace, nameof(Namespace), "Namespace");
+    }
+
+    private static void ValidateKubernetesName(string value, string paramName, string displayName)
+    {
+        if (!IsValidKubernetesName(value))
+        {
             throw new ArgumentException(
-                "Operator name must be a valid Kubernetes name: lowercase alphanumeric characters, '-' or '.', " +
+                $"{displayName} must be a valid Kubernetes name: lowercase alphanumeric characters, '-' or '.', " +
                 "must start and end with an alphanumeric character, and be 63 characters or less.",
-                nameof(Name));
-
-        if (string.IsNullOrWhiteSpace(Group))
-            throw new ArgumentException("Operator group must be provided.", nameof(Group));
-        if (string.IsNullOrWhiteSpace(Version))
-            throw new ArgumentException("Operator version must be provided.", nameof(Version));
-        if (string.IsNullOrWhiteSpace(Namespace))
-            throw new ArgumentException("Operator namespace must be provided.", nameof(Namespace));
+                paramName);
+        }
     }
 
     private static bool IsValidKubernetesName(string name)
@@ -44,11 +45,42 @@ public partial record OperatorConfiguration
 
     public class ContainerConfiguration
     {
-        public string Registry { get; set; } = "ghcr.io";
-        public string Repository { get; set; } = "default";
-        public string Image { get; set; } = "my-operator";
-        public string Tag { get; set; } = "0.1.0";
-        public string FullImage => $"{Registry}/{Repository}/{Image}:{Tag}";
+        public string? Registry { get; set; }
+        public string? Organization { get; set; }
+        public string Image { get; set; } = string.Empty;
+        public string? Tag { get; set; }
+        public string? Digest { get; set; }
+        public string FullImage()
+        {
+            var parts = new List<string>();
+
+            // Add registry if provided
+            if (!string.IsNullOrWhiteSpace(Registry))
+            {
+                parts.Add(Registry);
+            }
+
+            // Add organization if provided
+            if (!string.IsNullOrWhiteSpace(Organization))
+            {
+                parts.Add(Organization);
+            }
+
+            // Add image name (always required)
+            parts.Add(Image);
+
+            // Construct base image path
+            var imagePath = string.Join('/', parts);
+
+            // Add digest or tag
+            if (!string.IsNullOrWhiteSpace(Digest))
+            {
+                return $"{imagePath}@{Digest}";
+            }
+
+            var tag = !string.IsNullOrWhiteSpace(Tag) ? Tag : "latest";
+            return $"{imagePath}:{tag}";
+        }
     }
     public class LeaseConfiguration
     {

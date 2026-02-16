@@ -39,6 +39,18 @@ public class OperatorConfigurationProvider(
         {
             config.Namespace = namespaceAttr.Namespace;
         }
+
+        var containerAttr = _assembly.GetCustomAttribute<ContainerAttribute>();
+        if (containerAttr != null)
+        {
+            config.Container = new()
+            {
+                Registry = containerAttr.Registry,
+                Organization = containerAttr.Organization,
+                Image = containerAttr.Image,
+                Tag = containerAttr.Tag
+            };
+        }
     }
     private void ApplyConfiguration(OperatorConfiguration config)
     {
@@ -61,6 +73,39 @@ public class OperatorConfigurationProvider(
         if (!string.IsNullOrEmpty(ns))
         {
             config.Namespace = ns;
+        }
+        var containerSection = configuration.GetSection("Operator:Container");
+        if (containerSection != null)
+        {
+            var registery = containerSection["Registry"];
+            if (!string.IsNullOrEmpty(registery))
+            {
+                config.Container.Registry = containerSection["Registry"];
+            }
+
+            var organization = containerSection["Organization"];
+            if (!string.IsNullOrEmpty(organization))
+            {
+                config.Container.Organization = organization;
+            }
+
+            var image = containerSection["Image"];
+            if (!string.IsNullOrEmpty(image))
+            {
+                config.Container.Image = image;
+            }
+
+            var tag = containerSection["Tag"];
+            if (!string.IsNullOrEmpty(tag))
+            {
+                config.Container.Tag = tag;
+            }
+
+            var digest = containerSection["Digest"];
+            if (!string.IsNullOrEmpty(digest))
+            {
+                config.Container.Digest = digest;
+            }
         }
     }
 }

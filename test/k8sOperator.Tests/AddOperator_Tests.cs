@@ -1,8 +1,11 @@
 ﻿using k8s.Operator;
+using k8s.Operator.Cli;
+using k8s.Operator.Configuration;
+using k8s.Operator.Informer;
+using k8s.Operator.Reconciler;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace k8sOperator.Tests;
-
 
 public class AddOperator_Tests
 {
@@ -10,12 +13,12 @@ public class AddOperator_Tests
     public async Task Should_register_correct_services()
     {
         var services = new ServiceCollection();
-        services.AddOperator(x =>
-        {
-            x.Name = "test-operator";
-            x.Namespace = "default";
-            x.Container.Repository = "test-repo";
-        });
+        services.AddOperator();
         var serviceProvider = services.BuildServiceProvider();
+
+        await Assert.That(() => serviceProvider.GetRequiredService<OperatorConfiguration>()).ThrowsNothing();
+        await Assert.That(() => serviceProvider.GetRequiredService<SharedInformerFactory>()).ThrowsNothing();
+        await Assert.That(() => serviceProvider.GetRequiredService<ReconcilerFactory>()).ThrowsNothing();
+        await Assert.That(() => serviceProvider.GetRequiredService<CommandRegistry>()).ThrowsNothing();
     }
 }

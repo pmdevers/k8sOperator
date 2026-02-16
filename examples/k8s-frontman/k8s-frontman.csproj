@@ -5,7 +5,13 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>k8s.Frontman</RootNamespace>
+    <Company>pmdevers</Company>
 
+    <Version>1.2.3-alpha0001</Version>
+
+    <ContainerRegistry>ghcr.io</ContainerRegistry>
+    
+    
     <CreateOperatorLaunchSettings>true</CreateOperatorLaunchSettings>
     <GenerateOperatorDockerfile>true</GenerateOperatorDockerfile>
     

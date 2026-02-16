@@ -21,7 +21,7 @@ public class Reconciler<T> : IReconciler
         ReconcileDelegate<T> reconcile)
     {
         informer.OnAdd += async (w, ct) => await queue.EnqueueAsync(w, ct);
-        informer.OnUpdate += async (oldW, newW, ct) => await queue.EnqueueAsync(newW, ct);
+        informer.OnUpdate += async (_, newW, ct) => await queue.EnqueueAsync(newW, ct);
         informer.OnDelete += async (w, ct) => await queue.EnqueueAsync(w, ct);
         Informer = informer;
         Queue = queue;
@@ -38,8 +38,6 @@ public class Reconciler<T> : IReconciler
     {
         _cts = CancellationTokenSource.CreateLinkedTokenSource(token);
         Logger.LogInformation("Reconciler started.");
-
-        long? _lastgen = null;
 
         while (!_cts.IsCancellationRequested)
         {

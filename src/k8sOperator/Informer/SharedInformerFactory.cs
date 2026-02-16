@@ -7,7 +7,7 @@ namespace k8s.Operator.Informer;
 public class InformerFactory<T>(SharedInformerFactory factory, OperatorConfiguration config) : IInformer<T>
     where T : IKubernetesObject<V1ObjectMeta>
 {
-    private IInformer<T> _informer = factory.GetInformer<T>(config.Namespace);
+    private readonly IInformer<T> _informer = factory.GetInformer<T>(config.Namespace);
     public IIndexer<T> Indexer => _informer.Indexer;
 
     public event Action<T, CancellationToken> OnAdd

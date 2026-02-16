@@ -14,7 +14,7 @@ public class CommandRegistry(IServiceProvider serviceProvider)
     {
         var commandType = typeof(T);
         var attribute = commandType.GetCustomAttribute<OperatorCommandAttribute>()
-            ?? throw new ArgumentException($"Command type must have {nameof(OperatorCommandAttribute)}", nameof(commandType));
+                    ?? throw new ArgumentException($"Command type must have {nameof(OperatorCommandAttribute)}");
 
         _commands[attribute.Command] = commandType;
 

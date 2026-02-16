@@ -11,7 +11,8 @@ builder.Services.AddOperator(x =>
     x.Name = "simple-operator";
     x.Namespace = "default";
     x.Container.Registry = "ghcr.io";
-    x.Container.Repository = "myorg/simple-operator";
+    x.Container.Organization = "myorg";
+    x.Container.Image = "simple-operator";
     x.Container.Tag = "v1.0.0";
 });
 

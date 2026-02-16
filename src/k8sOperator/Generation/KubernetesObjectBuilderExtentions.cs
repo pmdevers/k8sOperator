@@ -59,10 +59,7 @@ public static class KubernetesObjectBuilderExtentions
         {
             builder.Add(x =>
             {
-                if (x.Metadata.Finalizers != null)
-                {
-                    x.Metadata.Finalizers.Remove(finalizer);
-                }
+                x.Metadata.Finalizers?.Remove(finalizer);
             });
             return builder;
         }
@@ -552,7 +549,6 @@ public static class KubernetesObjectBuilderExtentions
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
         public IObjectBuilder<T> ForType(Type type)
         {
-            var b = ObjectBuilder.Create<V1CustomResourceValidation>();
             var s = ObjectBuilder.Create<V1JSONSchemaProps>();
 
             s.OfType("object");

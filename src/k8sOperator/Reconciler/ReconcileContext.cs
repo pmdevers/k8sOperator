@@ -95,7 +95,6 @@ public class ReconcileContext<T>(
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to update status for {ResourceName}", Resource.Name());
-            throw;
         }
     }
 }

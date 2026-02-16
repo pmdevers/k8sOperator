@@ -1,17 +1,16 @@
 ﻿using k8s.Models;
 using k8s.Operator.Configuration;
 using k8s.Operator.Generation;
-using k8s.Operator.Informer;
 using System.Reflection;
 
 namespace k8s.Operator.Cli.Commands;
 
 [OperatorCommand("install", "Install the operator", -1, "-i", "--install")]
-public class InstallCommand(OperatorConfiguration config, SharedInformerFactory factory) : IOperatorCommand
+public class InstallCommand(OperatorConfiguration config) : IOperatorCommand
 {
     private readonly StringWriter _output = new();
 
-    public async Task ExecuteAsync(string[] args)
+    public async Task<int> ExecuteAsync(string[] args)
     {
         var resources = config.Install.Resources;
         var clusterrole = CreateClusterRole(config, resources);
@@ -45,6 +44,8 @@ public class InstallCommand(OperatorConfiguration config, SharedInformerFactory 
         }
 
         Console.WriteLine(_output.ToString());
+
+        return 0;
     }
 
     private async Task Write(IKubernetesObject obj)
@@ -127,7 +128,7 @@ public class InstallCommand(OperatorConfiguration config, SharedInformerFactory 
                         s.AddContainer(config.Name, c =>
                         {
                             c.AddEnvFromObjectField("NAMESPACE", "metadata.namespace");
-                            c.WithImage(config.Container.FullImage);
+                            c.WithImage(config.Container.FullImage());
                             c.WithResources(
                                 limits: new()
                                 {

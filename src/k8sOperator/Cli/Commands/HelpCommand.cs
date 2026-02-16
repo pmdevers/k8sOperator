@@ -1,18 +1,14 @@
 ﻿using k8s.Operator.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using System.Reflection;
 using static k8s.Operator.Cli.Helpers.ConsoleHelpers;
 
 namespace k8s.Operator.Cli.Commands;
 
 [OperatorCommand("help", "Display help information", -1, "-h", "--help")]
-public class HelpCommand(IHost host, CommandRegistry registry) : IOperatorCommand
+public class HelpCommand(OperatorConfiguration config, CommandRegistry registry) : IOperatorCommand
 {
-    public Task ExecuteAsync(string[] args)
+    public Task<int> ExecuteAsync(string[] args)
     {
-        var config = host.Services.GetRequiredService<OperatorConfiguration>();
-
         var operatorName = config.Name;
 
         Console.WriteLine($"Welcome to the help for {operatorName}.");
@@ -36,6 +32,6 @@ public class HelpCommand(IHost host, CommandRegistry registry) : IOperatorComman
         }
 
         Console.WriteLine();
-        return Task.CompletedTask;
+        return Task.FromResult(0);
     }
 }
