@@ -3,27 +3,37 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG TARGETARCH
 WORKDIR /src
 
+# Map Docker TARGETARCH to .NET RID
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+        echo "x64" > /tmp/rid; \
+    elif [ "$TARGETARCH" = "arm64" ]; then \
+        echo "arm64" > /tmp/rid; \
+    else \
+        echo "x64" > /tmp/rid; \
+    fi
+
 # Copy project file and restore dependencies
 COPY ["k8s-frontman.csproj", "./"]
-RUN dotnet restore -r linux-$TARGETARCH
+RUN DOTNET_RID=$(cat /tmp/rid) && \
+    dotnet restore -r linux-$DOTNET_RID
 
 # Copy source code
 COPY . .
 
 # Publish as single-file executable with optimizations
-RUN dotnet publish "k8s-frontman.csproj" -c Release -r linux-$TARGETARCH \
+RUN dotnet publish "k8s-frontman.csproj" -c Release -r linux-$DOTNET_RID \
     --no-restore \
     --self-contained true \
     -p:PublishSingleFile=true \
     -p:PublishTrimmed=true \
     -p:EnableCompressionInSingleFile=true \
     -p:IncludeNativeLibrariesForSelfContained=true \
-    -p:PublishReadyToRun=true \
     -p:InvariantGlobalization=false \
-    -o /app/publish
+    -o /app/publish && \
+     chmod +x /app/publish/k8s-frontman
 
 # Runtime stage - use smaller runtime-deps image for self-contained apps
-FROM mcr.microsoft.com/dotnet/runtime-deps:10.0-noble-chiseled AS final
+FROM mcr.microsoft.com/dotnet/runtime-deps:10.0-noble-chiseled-extra AS final
 WORKDIR /app
 
 # OCI annotations / labels
@@ -37,9 +47,6 @@ USER $APP_UID
 
 # Copy published executable
 COPY --from=build --chown=$APP_UID:$APP_UID /app/publish/k8s-frontman .
-
-# Set ownership
-RUN chmod +x k8s-frontman
 
 # Set environment variables
 ENV ASPNETCORE_ENVIRONMENT=Production \

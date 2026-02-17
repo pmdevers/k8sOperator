@@ -106,17 +106,22 @@
 
 	<!-- Generate Dockerfile if it doesn't exist -->
 	<Target Name="GenerateDockerfile" 
-	        DependsOnTargets="AddDockerImageAttribute" 
-	        BeforeTargets="Build" 
-	        Condition=" '$(GenerateOperatorDockerfile)' == 'true' AND !Exists('$(MSBuildProjectDirectory)\Dockerfile') ">
+			BeforeTargets="Build" 
+			Condition=" '$(GenerateOperatorDockerfile)' == 'true' AND !Exists('$(MSBuildProjectDirectory)\Dockerfile') ">
+		<PropertyGroup>
+			<_DockerContainerRegistry Condition=" '$(ContainerRegistry)' == '' ">docker.io</_DockerContainerRegistry>
+			<_DockerContainerRegistry Condition=" '$(ContainerRegistry)' != '' ">$(ContainerRegistry)</_DockerContainerRegistry>
+			<_FullContainerRepository Condition=" '$(ContainerOrganization)' != '' ">$(ContainerOrganization)/$(ContainerImage)</_FullContainerRepository>
+			<_FullContainerRepository Condition=" '$(ContainerOrganization)' == '' ">$(ContainerImage)</_FullContainerRepository>
+		</PropertyGroup>
 		<GenerateDockerfileTask
 			ProjectDirectory="$(MSBuildProjectDirectory)"
 			ProjectName="$(MSBuildProjectName)"
 			TargetFramework="$(TargetFramework)"
 			OperatorName="$(OperatorName)"
-			ContainerRegistry="$(ContainerRegistry)"
+			ContainerRegistry="$(_DockerContainerRegistry)"
 			ContainerRepository="$(_FullContainerRepository)"
-			ContainerTag="$(_FullContainerTag)"
+			ContainerTag="$(ContainerTag)"
 			UseSingleFilePublish="$(PublishSingleFileExecutable)" />
 	</Target>
 

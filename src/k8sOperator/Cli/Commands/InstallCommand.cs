@@ -127,7 +127,7 @@ public class InstallCommand(OperatorConfiguration config) : IOperatorCommand
                             }));
                         s.AddContainer(config.Name, c =>
                         {
-                            c.AddEnvFromObjectField("NAMESPACE", "metadata.namespace");
+                            c.AddEnvFromObjectField("OPERATOR__NAMESPACE", "metadata.namespace");
                             c.WithImage(config.Container.FullImage());
                             c.WithResources(
                                 limits: new()
