@@ -173,34 +173,36 @@ public class InstallCommand(OperatorConfiguration config) : IOperatorCommand
                     .WithName($"{config.Name}-role");
 
         clusterrole.AddRule(x =>
-               x.WithApiGroups("")
-                .WithResources("pods", "pods/log", "services", "endpoints")
-                .WithVerbs("get", "list", "watch")
+               x.WithApiGroups([string.Empty])
+                .WithResources(["pods", "pods/log", "services", "endpoints"])
+                .WithVerbs(["get", "list", "watch"])
          );
 
         clusterrole.AddRule(x =>
-            x.WithApiGroups("coordination.k8s.io")
-             .WithResources("leases")
-             .WithVerbs("create", "update", "get")
+            x.WithApiGroups(["coordination.k8s.io"])
+             .WithResources(["leases"])
+             .WithVerbs(["create", "update", "get"])
         );
 
         var rules = resources
             .Select(x => x.GetCustomAttribute<KubernetesEntityAttribute>())
             .Where(x => x is not null)
-            .GroupBy(x => x!.Group)
+            .Select(x => x!)
+            .GroupBy(x => x.Group)
             .ToList();
 
         foreach (var item in rules)
         {
+            var apiGroup = item.Key ?? string.Empty;
             clusterrole.AddRule(x =>
-                x.WithApiGroups(item.Key)
+                x.WithApiGroups([apiGroup])
                  .WithResources([.. item.Select(x => x.PluralName)])
-                 .WithVerbs("*")
+                 .WithVerbs(["*"])
             );
             clusterrole.AddRule(x =>
-                x.WithApiGroups(item.Key)
+                x.WithApiGroups([apiGroup])
                  .WithResources([.. item.Select(x => $"{x.PluralName}/status")])
-                 .WithVerbs("get", "update", "patch")
+                 .WithVerbs(["get", "update", "patch"])
             );
         }
 

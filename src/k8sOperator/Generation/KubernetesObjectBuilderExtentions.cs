@@ -888,7 +888,7 @@ public static class KubernetesObjectBuilderExtentions
     extension<T>(IObjectBuilder<T> builder)
         where T : V1PolicyRule
     {
-        public IObjectBuilder<T> WithApiGroups(params string[] apiGroups)
+        public IObjectBuilder<T> WithApiGroups(string[] apiGroups)
         {
             builder.Add(x =>
             {
@@ -896,7 +896,7 @@ public static class KubernetesObjectBuilderExtentions
             });
             return builder;
         }
-        public IObjectBuilder<T> WithResources(params string[] resources)
+        public IObjectBuilder<T> WithResources(string[] resources)
         {
             builder.Add(x =>
             {
@@ -904,7 +904,7 @@ public static class KubernetesObjectBuilderExtentions
             });
             return builder;
         }
-        public IObjectBuilder<T> WithVerbs(params string[] verbs)
+        public IObjectBuilder<T> WithVerbs(string[] verbs)
         {
             builder.Add(x =>
             {
