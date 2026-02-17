@@ -17,7 +17,7 @@
 		      DestinationFiles="$(_BuildTasksShadowPath)" 
 		      SkipUnchangedFiles="true"
 		      OverwriteReadOnlyFiles="true"
-		      Condition="Exists('$(_BuildTasksSourcePath)')" />
+		      Condition="Exists('$(_BuildTasksSourcePath)') AND !Exists('$(_BuildTasksShadowPath)')" />
 	</Target>
 
 	<!-- Load from shadow copy -->

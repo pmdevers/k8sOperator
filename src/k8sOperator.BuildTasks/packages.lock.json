@@ -4,17 +4,17 @@
     ".NETStandard,Version=v2.0": {
       "Microsoft.Build.Framework": {
         "type": "Direct",
-        "requested": "[18.0.2, )",
-        "resolved": "18.0.2",
-        "contentHash": "sOSb+0J4G/jCBW/YqmRuL0eOMXgfw1KQLdC9TkbvfA5xs7uNm+PBQXJCOzSJGXtZcZrtXozcwxPmUiRUbmd7FA=="
+        "requested": "[18.3.3, )",
+        "resolved": "18.3.3",
+        "contentHash": "6lUd+/IQrxKz+++m2ehMnN+83bWrdvLf6S/iNH41d2RhuGE9etoCqosIBzjfkPwBoHih3touW/xl1ev+KUgkjw=="
       },
       "Microsoft.Build.Utilities.Core": {
         "type": "Direct",
-        "requested": "[18.0.2, )",
-        "resolved": "18.0.2",
-        "contentHash": "qsI2Mc8tbJEyg5m4oTvxlu5wY8te0TIVxObxILvrrPdeFUwH5V5UXUT2RV054b3S9msIR+7zViTWp4nRp0YGbQ==",
+        "requested": "[18.3.3, )",
+        "resolved": "18.3.3",
+        "contentHash": "jpqF191vbyUs9TU3oxT6xURHQhdH7CwECFMyItGoizbYVQMyk0Di2bF4fs2DrbJHN1o1eVfWZrC08tauDceG4g==",
         "dependencies": {
-          "Microsoft.Build.Framework": "18.0.2"
+          "Microsoft.Build.Framework": "18.3.3"
         }
       },
       "Microsoft.Sbom.Targets": {
