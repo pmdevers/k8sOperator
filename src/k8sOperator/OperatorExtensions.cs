@@ -30,11 +30,14 @@ public static class OperatorExtensions
         /// <returns>The IServiceCollection instance with the operator services registered. This enables method chaining.</returns>
         public IServiceCollection AddOperator(Action<OperatorConfiguration>? configure = null)
         {
-            services.AddSingleton<IKubernetes>(sp =>
+            services.TryAddSingleton<IKubernetes>(sp =>
             {
-                var config = KubernetesClientConfiguration.IsInCluster()
+                var operatorConfig = sp.GetService<OperatorConfiguration>();
+
+                var config = operatorConfig?.Kubernetes ??
+                    (KubernetesClientConfiguration.IsInCluster()
                     ? KubernetesClientConfiguration.InClusterConfig()
-                    : KubernetesClientConfiguration.BuildConfigFromConfigFile();
+                    : KubernetesClientConfiguration.BuildConfigFromConfigFile());
                 return new Kubernetes(config);
             });
 
