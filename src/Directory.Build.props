@@ -42,7 +42,7 @@
 		</None>
 		<None Include="..\..\README.md">
 			<Pack>True</Pack>
-			<Visible>False</Visible>
+			<Visible>True</Visible>
 			<PackagePath>\</PackagePath>
 		</None>
 		<InternalsVisibleTo Include="$(ProjectName).Tests"/>

@@ -287,33 +287,79 @@ public static class KubernetesObjectBuilderExtentions
         }
 
         public IObjectBuilder<T> AddEnvFromObjectField(string name, string path)
-            => builder.AddEnv<T, V1ObjectFieldSelector>(name, x => x.FieldPath = path);
-        public IObjectBuilder<T> AddEnvFromSecretKey(string name, string key, string secretName)
-            => builder.AddEnv<T, V1SecretKeySelector>(name, x => { x.Key = key; x.Name = secretName; });
-        public IObjectBuilder<T> AddEnvFromResourceField(string name, string path)
-            => builder.AddEnv<T, V1ResourceFieldSelector>(name, x => x.Resource = path);
-        public IObjectBuilder<T> AddEnvFromConfigMapKey(string name, string key, string configMapName)
-            => builder.AddEnv<T, V1ConfigMapKeySelector>(name, x => { x.Key = key; x.Name = configMapName; });
-        public IObjectBuilder<T> AddEnv<TValue>(string name, Action<TValue> action) where TValue : new()
         {
-            var value = new TValue();
-            action(value);
-            var valueFrom = value switch
-            {
-                V1ObjectFieldSelector fieldRef => new V1EnvVarSource() { FieldRef = fieldRef },
-                V1SecretKeySelector secretKeyRef => new V1EnvVarSource() { SecretKeyRef = secretKeyRef },
-                V1ResourceFieldSelector resourceFieldRef => new V1EnvVarSource() { ResourceFieldRef = resourceFieldRef },
-                V1ConfigMapKeySelector configMapKeyRef => new V1EnvVarSource() { ConfigMapKeyRef = configMapKeyRef },
-                _ => throw new InvalidOperationException()
-            };
-
             builder.Add(x =>
             {
                 x.Env ??= [];
                 x.Env.Add(new()
                 {
                     Name = name,
-                    ValueFrom = valueFrom
+                    ValueFrom = new()
+                    {
+                        FieldRef = new V1ObjectFieldSelector()
+                        {
+                            FieldPath = path
+                        }
+                    }
+                });
+            });
+            return builder;
+        }
+        public IObjectBuilder<T> AddEnvFromSecretKey(string name, string key, string secretName)
+        {
+            builder.Add(x =>
+            {
+                x.Env ??= [];
+                x.Env.Add(new()
+                {
+                    Name = name,
+                    ValueFrom = new()
+                    {
+                        SecretKeyRef = new V1SecretKeySelector()
+                        {
+                            Key = key,
+                            Name = secretName,
+                        }
+                    }
+                });
+            });
+            return builder;
+        }
+        public IObjectBuilder<T> AddEnvFromResourceField(string name, string path)
+        {
+            builder.Add(x =>
+            {
+                x.Env ??= [];
+                x.Env.Add(new()
+                {
+                    Name = name,
+                    ValueFrom = new()
+                    {
+                        ResourceFieldRef = new V1ResourceFieldSelector
+                        {
+                            Resource = path
+                        }
+                    }
+                });
+            });
+            return builder;
+        }
+        public IObjectBuilder<T> AddEnvFromConfigMapKey(string name, string key, string configMapName)
+        {
+            builder.Add(x =>
+            {
+                x.Env ??= [];
+                x.Env.Add(new()
+                {
+                    Name = name,
+                    ValueFrom = new()
+                    {
+                        ConfigMapKeyRef = new V1ConfigMapKeySelector
+                        {
+                            Key = key,
+                            Name = configMapName
+                        }
+                    }
                 });
             });
             return builder;
@@ -625,7 +671,7 @@ public static class KubernetesObjectBuilderExtentions
             {
                 builder.Add(x =>
                 {
-                    x.Type = "integer";
+                    x.Type = "number";
                     x.Nullable = nullable;
                 });
                 return builder;
@@ -634,7 +680,7 @@ public static class KubernetesObjectBuilderExtentions
             {
                 builder.Add(x =>
                 {
-                    x.Type = "string";
+                    x.Type = "boolean";
                     x.Nullable = nullable;
                 });
                 return builder;

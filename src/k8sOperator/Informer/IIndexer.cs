@@ -46,7 +46,7 @@ public class InMemoryIndexer<T> : IIndexer<T>
 
     public T? Get(string name, string? ns = null)
     {
-        var key = new ResourceKey(name, ns);
+        var key = new ResourceKey(name, ns ?? string.Empty);
         return _set.TryGetValue(key, out var value) ?
             value : default;
     }

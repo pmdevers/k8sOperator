@@ -185,8 +185,9 @@ public class InstallCommand(OperatorConfiguration config) : IOperatorCommand
         );
 
         var rules = resources
-            .Select(x => x.GetCustomAttributes<KubernetesEntityAttribute>().First())
-            .GroupBy(x => x.Group)
+            .Select(x => x.GetCustomAttribute<KubernetesEntityAttribute>())
+            .Where(x => x is not null)
+            .GroupBy(x => x!.Group)
             .ToList();
 
         foreach (var item in rules)

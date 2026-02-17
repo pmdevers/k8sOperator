@@ -58,7 +58,7 @@ public class ReconcileContext<T>(
                 builder(updatedResource);
 
             var updated = updatedResource.Build();
-            var changes = ResourceChanges.DetectChanges(Resource, updated);
+            var changes = ResourceChanges.DetectChanges(latest, updated);
 
             if (changes.HasStatusChanges)
             {

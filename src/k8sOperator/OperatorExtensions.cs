@@ -32,7 +32,9 @@ public static class OperatorExtensions
         {
             services.AddSingleton<IKubernetes>(sp =>
             {
-                var config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+                var config = KubernetesClientConfiguration.IsInCluster()
+                    ? KubernetesClientConfiguration.InClusterConfig()
+                    : KubernetesClientConfiguration.BuildConfigFromConfigFile();
                 return new Kubernetes(config);
             });
 

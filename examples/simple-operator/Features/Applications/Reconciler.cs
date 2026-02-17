@@ -2,7 +2,7 @@
 using k8s.Operator.Generation;
 using k8s.Operator.Reconciler;
 
-namespace simple_operator.Features.ManageApplication;
+namespace simple_operator.Features.Applications;
 
 public static class Reconciler
 {
@@ -21,6 +21,7 @@ public static class Reconciler
         // Your reconciliation logic here
         // You can access other resources from the cache
         var allApps = context.Informer.List().Count();
+
         context.Logger.LogInformation("Total apps in cache: {Count}", allApps);
 
         context.Update(x =>
@@ -29,15 +30,9 @@ public static class Reconciler
             x.WithLabel("processed", "true");
             x.WithStatus(x =>
             {
-                x.Add(x =>
-                {
-                    x.Phase = "Reconciling";
-                    x.ReadyReplicas = context.Resource.Spec?.Replicas ?? 0;
-                });
+                x.Phase = "Reconciling";
+                x.ReadyReplicas = context.Resource.Spec?.Replicas ?? 0;
             });
         });
-
-        context.Logger.LogInformation("Reconciled MyApp {Name}, replicas: {Replicas}",
-            context.Resource.Metadata.Name, context.Resource.Status?.ReadyReplicas);
     }
 }

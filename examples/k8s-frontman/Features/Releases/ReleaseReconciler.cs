@@ -9,10 +9,10 @@ public static class ReleaseReconciler
 {
     public static async Task ReconcileAsync(ReconcileContext<V1Release> context)
     {
-        var infromer = context.GetInformer<V1Release>();
+        var informer = context.GetInformer<V1Release>();
         var providers = context.GetInformer<V1Provider>();
 
-        var current = infromer.Indexer.Get(context.Resource);
+        var current = informer.Indexer.Get(context.Resource);
         var provider = providers.Indexer.Get(context.Resource.Spec.Provider, context.Resource.Metadata.NamespaceProperty);
 
         context.Update(x =>
@@ -28,7 +28,7 @@ public static class ReleaseReconciler
             {
                 x.WithStatus(x =>
                 {
-                    x.Add(x => x.Message = $"Provider '{context.Resource.Spec.Provider}' not found.");
+                    x.Message = $"Provider '{context.Resource.Spec.Provider}' not found.";
                 });
             });
 
@@ -41,14 +41,11 @@ public static class ReleaseReconciler
             {
                 x.WithStatus(x =>
                 {
-                    x.Add(x =>
+                    x.Message = $"Version '{context.Resource.Spec.Version}' not found.";
+                    if (current?.Status?.CurrentVersion != context.Resource.Spec.Version)
                     {
-                        x.Message = $"Version '{context.Resource.Spec.Version}' not found.";
-                        if (current?.Status?.CurrentVersion != context.Resource.Spec.Version)
-                        {
-                            x.PreviousVersion = current?.Status?.CurrentVersion ?? string.Empty;
-                        }
-                    });
+                        x.PreviousVersion = current?.Status?.CurrentVersion ?? string.Empty;
+                    }
                 });
             });
 
@@ -61,15 +58,12 @@ public static class ReleaseReconciler
         {
             x.WithStatus(x =>
             {
-                x.Add(x =>
+                x.Message = string.Empty;
+                x.CurrentVersion = context.Resource.Spec.Version;
+                if (current?.Status?.CurrentVersion != context.Resource.Spec.Version)
                 {
-                    x.Message = string.Empty;
-                    x.CurrentVersion = context.Resource.Spec.Version;
-                    if (current?.Status?.CurrentVersion != context.Resource.Spec.Version)
-                    {
-                        x.PreviousVersion = current?.Status?.CurrentVersion ?? string.Empty;
-                    }
-                });
+                    x.PreviousVersion = current?.Status?.CurrentVersion ?? string.Empty;
+                }
             });
         });
     }

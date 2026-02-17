@@ -1,11 +1,9 @@
-        public IObjectBuilder<{{CLASS_NAME}}> WithStatus(Action<IObjectBuilder<{{STATUS_TYPE_NAME}}>> configure)
+        public IObjectBuilder<{{CLASS_NAME}}> WithStatus(Action<{{STATUS_TYPE_NAME}}> configure)
         {
             builder.Add(x =>
             {
                 x.Status ??= new();
-                var statusBuilder = ObjectBuilder.Create(x.Status);
-                configure(statusBuilder);
-                x.Status = statusBuilder.Build();
+                configure(x.Status);
             });
             return builder;
         }

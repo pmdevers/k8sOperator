@@ -21,11 +21,8 @@ public static partial class ProviderReconciler
                 x.WithLabel("processed", "true");
                 x.WithStatus(x =>
                 {
-                    x.Add(s =>
-                    {
-                        s.NumberOfReleases = dirs.Count;
-                        s.Versions = [.. dirs.TakeLast(10)];
-                    });
+                    x.NumberOfReleases = dirs.Count;
+                    x.Versions = [.. dirs.TakeLast(10)];
                 });
             });
         }

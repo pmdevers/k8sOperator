@@ -1,7 +1,7 @@
 ﻿using k8s;
 using k8s.Models;
 
-namespace simple_operator.Features.ManageApplication;
+namespace simple_operator.Features.Applications;
 /// <summary>
 /// Example custom resource
 /// </summary>
@@ -9,9 +9,9 @@ namespace simple_operator.Features.ManageApplication;
 public class V1MyApp : IKubernetesObject<V1ObjectMeta>, ISpec<V1MyAppSpec>, IStatus<V1MyAppStatus>
 {
     public const string KubeApiVersion = "v1";
-    public const string KubeKind = "TodoItem";
+    public const string KubeKind = "MyApp";
     public const string KubeGroup = "simplicity.io";
-    public const string KubePluralName = "todos";
+    public const string KubePluralName = "myapps";
 
     public string ApiVersion { get; set; } = $"{KubeGroup}/{KubeApiVersion}";
     public string Kind { get; set; } = KubeKind;
