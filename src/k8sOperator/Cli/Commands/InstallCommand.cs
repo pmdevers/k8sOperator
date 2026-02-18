@@ -10,40 +10,79 @@ public class InstallCommand(OperatorConfiguration config) : IOperatorCommand
 {
     private readonly StringWriter _output = new();
 
+    [Option(Name = "--output", Aliases = ["-o"], Description = "Output file path (default: stdout)", ValueName = "file")]
+    public string? OutputFile { get; set; }
+
+    [Option(Name = "--namespace", Aliases = ["-n"], Description = "Override the operator namespace", ValueName = "name")]
+    public string? NamespaceOverride { get; set; }
+
+    [Option(Name = "--skip-crds", Description = "Skip CustomResourceDefinition installation")]
+    public bool SkipCrds { get; set; }
+
+    [Option(Name = "--skip-deployment", Description = "Skip Deployment installation")]
+    public bool SkipDeployment { get; set; }
+
+    [Option(Name = "--skip-namespace", Description = "Skip Namespace installation")]
+    public bool SkipNamespace { get; set; }
+
     public async Task<int> ExecuteAsync(string[] args)
     {
-        var resources = config.Install.Resources;
-        var clusterrole = CreateClusterRole(config, resources);
-        var clusterrolebinding = CreateClusterRoleBinding(config);
+        // Apply namespace override if specified
+        var effectiveNamespace = NamespaceOverride ?? config.Namespace;
+        var effectiveConfig = config with { Namespace = effectiveNamespace };
+        var resources = effectiveConfig.Install.Resources;
 
-        var ns = CreateNamespace(config);
-        var deployment = CreateDeployment(config);
-
-        foreach (var item in resources)
+        if (!SkipCrds)
         {
-            var group = item.GetCustomAttribute<KubernetesEntityAttribute>();
-
-            if (group == null)
+            foreach (var item in resources)
             {
-                continue;
+                var group = item.GetCustomAttribute<KubernetesEntityAttribute>();
+
+                if (group == null)
+                {
+                    continue;
+                }
+
+                var crd = CreateCustomResourceDefinition(item, group);
+                await Write(crd);
             }
-
-            var crd = CreateCustomResourceDefinition(item, group);
-
-            await Write(crd);
         }
+
+        var clusterrole = CreateClusterRole(effectiveConfig, resources);
+        var clusterrolebinding = CreateClusterRoleBinding(effectiveConfig);
 
         await Write(clusterrole);
         await Write(clusterrolebinding);
-        await Write(ns);
-        await Write(deployment);
 
-        foreach (var item in config.Install.AdditionalObjects)
+        if (!SkipNamespace)
+        {
+            var ns = CreateNamespace(effectiveConfig);
+            await Write(ns);
+        }
+
+        if (!SkipDeployment)
+        {
+            var deployment = CreateDeployment(effectiveConfig);
+            await Write(deployment);
+        }
+
+        foreach (var item in effectiveConfig.Install.AdditionalObjects)
         {
             await Write(item);
         }
 
-        Console.WriteLine(_output.ToString());
+        var output = _output.ToString();
+
+        // Write to file or stdout
+        if (!string.IsNullOrEmpty(OutputFile))
+        {
+            await File.WriteAllTextAsync(OutputFile, output);
+            Console.WriteLine($"Installation manifests written to: {OutputFile}");
+        }
+        else
+        {
+            Console.WriteLine(output);
+        }
 
         return 0;
     }
@@ -91,13 +130,13 @@ public class InstallCommand(OperatorConfiguration config) : IOperatorCommand
         return crdBuilder.Build();
     }
 
-    private static V1Namespace CreateNamespace(OperatorConfiguration config) =>
+    private V1Namespace CreateNamespace(OperatorConfiguration config) =>
             KubernetesObjectBuilder.Create<V1Namespace>()
             .WithName(config.Namespace)
             .Add(x => config.Install.ConfigureNamespace?.Invoke(x))
             .Build();
 
-    private static V1Deployment CreateDeployment(OperatorConfiguration config)
+    private V1Deployment CreateDeployment(OperatorConfiguration config)
         => KubernetesObjectBuilder.Create<V1Deployment>()
             .WithName($"{config.Name}")
             .WithNamespace(config.Namespace)

@@ -12,6 +12,17 @@
             },
             "launchBrowser": false
         },
+        "Help Install": {
+            "applicationUrl": "http://localhost:5137",
+            "commandLineArgs": "help install",
+            "commandName": "Project",
+            "dotnetRunMessages": true,
+            "environmentVariables": {
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "ASPNETCORE_HOSTINGSTARTUPASSEMBLIES": ""
+            },
+            "launchBrowser": false
+        },
         "version": {
             "applicationUrl": "http://localhost:5137",
             "commandLineArgs": "version",
@@ -58,7 +69,7 @@
         },
         "Install": {
             "applicationUrl": "http://localhost:5137",
-            "commandLineArgs": "install > install.yaml",
+            "commandLineArgs": "install -n default > install.yaml",
             "commandName": "Project",
             "dotnetRunMessages": true,
             "environmentVariables": {

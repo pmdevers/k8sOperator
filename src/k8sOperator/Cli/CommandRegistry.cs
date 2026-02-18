@@ -25,7 +25,7 @@ public class CommandRegistry(IServiceProvider serviceProvider)
         return this;
     }
 
-    public IOperatorCommand? GetCommand(string name)
+    public IOperatorCommand? Get(string name)
     {
         return _commands.TryGetValue(name, out var commandType) ?
             ActivatorUtilities.CreateInstance(serviceProvider, commandType) as IOperatorCommand
