@@ -68,6 +68,14 @@ public class InstallCommand(OperatorConfiguration config) : IOperatorCommand
 
         foreach (var item in effectiveConfig.Install.AdditionalObjects)
         {
+            if (item is IKubernetesObject<V1ObjectMeta> obj)
+            {
+                if (string.IsNullOrEmpty(obj.Metadata.NamespaceProperty))
+                {
+                    obj.Metadata.NamespaceProperty = effectiveConfig.Namespace;
+                }
+            }
+
             await Write(item);
         }
 
