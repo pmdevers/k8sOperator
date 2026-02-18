@@ -1,4 +1,5 @@
-﻿using k8s.Models;
+﻿using k8s.Exceptions;
+using k8s.Models;
 using k8s.Operator.Cli;
 using k8s.Operator.Cli.Commands;
 using k8s.Operator.Configuration;
@@ -34,11 +35,20 @@ public static class OperatorExtensions
             {
                 var operatorConfig = sp.GetService<OperatorConfiguration>();
 
-                var config = operatorConfig?.Kubernetes ??
-                    (KubernetesClientConfiguration.IsInCluster()
-                    ? KubernetesClientConfiguration.InClusterConfig()
-                    : KubernetesClientConfiguration.BuildConfigFromConfigFile());
-                return new Kubernetes(config);
+                try
+                {
+                    var config = operatorConfig?.Kubernetes ??
+                        (KubernetesClientConfiguration.IsInCluster()
+                        ? KubernetesClientConfiguration.InClusterConfig()
+                        : KubernetesClientConfiguration.BuildConfigFromConfigFile());
+                    return new Kubernetes(config);
+                }
+                catch (KubeConfigException)
+                {
+                    // Return null if kubeconfig is not available
+                    // This allows CLI commands to work without Kubernetes connection
+                    return null!;
+                }
             });
 
             services.TryAddTransient(typeof(IInformer<>), typeof(InformerFactory<>));
