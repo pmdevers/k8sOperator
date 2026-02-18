@@ -2,6 +2,11 @@
 
 A modern Kubernetes Operator framework for .NET that makes it easy to build custom controllers and operators.
 
+![License](https://img.shields.io/github/license/pmdevers/k8sOperator)
+![Release](https://img.shields.io/github/v/release/pmdevers/k8sOperator)
+
+![k8sOperator logo](https://github.com/pmdevers/k8sOperator/raw/main/assets/logo_256.png)
+
 ## Features
 
 - 🎯 **Simple API** - Fluent builder pattern for Kubernetes resources
