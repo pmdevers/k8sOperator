@@ -69,7 +69,18 @@
         },
         "Install": {
             "applicationUrl": "http://localhost:5137",
-            "commandLineArgs": "install -n default > install.yaml",
+            "commandLineArgs": "install -n frontman-system > install.yaml",
+            "commandName": "Project",
+            "dotnetRunMessages": true,
+            "environmentVariables": {
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "ASPNETCORE_HOSTINGSTARTUPASSEMBLIES": ""
+            },
+            "launchBrowser": false
+        },
+        "Install (default)": {
+            "applicationUrl": "http://localhost:5137",
+            "commandLineArgs": "install > install.yaml",
             "commandName": "Project",
             "dotnetRunMessages": true,
             "environmentVariables": {

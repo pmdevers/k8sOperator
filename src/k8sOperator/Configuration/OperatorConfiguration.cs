@@ -7,7 +7,7 @@ public partial record OperatorConfiguration
 {
     public string Name { get; set; } = "my-operator";
     public string Version { get; set; } = "0.0.1";
-    public string Namespace { get; set; } = "default";
+    public string? Namespace { get; set; }
 
     public KubernetesClientConfiguration? Kubernetes { get; set; }
     public LeaseConfiguration Lease { get; set; } = new();
@@ -81,7 +81,7 @@ public partial record OperatorConfiguration
             }
 
             var tag = !string.IsNullOrWhiteSpace(Tag) ? Tag : "latest";
-            return $"{imagePath}:{tag}";
+            return $"{imagePath}:{tag}".ToLowerInvariant();
         }
     }
     public class LeaseConfiguration

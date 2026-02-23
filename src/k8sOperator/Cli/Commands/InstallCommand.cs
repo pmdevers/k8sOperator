@@ -28,13 +28,9 @@ public class InstallCommand(OperatorConfiguration config) : IOperatorCommand
     public async Task<int> ExecuteAsync(string[] args)
     {
         // Apply namespace override if specified
-        var effectiveNamespace = NamespaceOverride ?? config.Namespace;
-        var effectiveConfig = config with { Namespace = effectiveNamespace };
-        var resources = effectiveConfig.Install.Resources;
-
         if (!SkipCrds)
         {
-            foreach (var item in resources)
+            foreach (var item in config.Install.Resources)
             {
                 var group = item.GetCustomAttribute<KubernetesEntityAttribute>();
 
@@ -48,32 +44,29 @@ public class InstallCommand(OperatorConfiguration config) : IOperatorCommand
             }
         }
 
-        var clusterrole = CreateClusterRole(effectiveConfig, resources);
-        var clusterrolebinding = CreateClusterRoleBinding(effectiveConfig);
+        var clusterrole = CreateClusterRole(config);
+        var clusterrolebinding = CreateClusterRoleBinding(config);
 
         await Write(clusterrole);
         await Write(clusterrolebinding);
 
-        if (!SkipNamespace)
+        if (!string.IsNullOrEmpty(NamespaceOverride))
         {
-            var ns = CreateNamespace(effectiveConfig);
+            var ns = CreateNamespace(config);
             await Write(ns);
         }
 
         if (!SkipDeployment)
         {
-            var deployment = CreateDeployment(effectiveConfig);
+            var deployment = CreateDeployment(config);
             await Write(deployment);
         }
 
-        foreach (var item in effectiveConfig.Install.AdditionalObjects)
+        foreach (var item in config.Install.AdditionalObjects)
         {
-            if (item is IKubernetesObject<V1ObjectMeta> obj)
+            if (item is IKubernetesObject<V1ObjectMeta> obj && !string.IsNullOrEmpty(NamespaceOverride))
             {
-                if (string.IsNullOrEmpty(obj.Metadata.NamespaceProperty))
-                {
-                    obj.Metadata.NamespaceProperty = effectiveConfig.Namespace;
-                }
+                obj.Metadata.NamespaceProperty = NamespaceOverride;
             }
 
             await Write(item);
@@ -140,14 +133,13 @@ public class InstallCommand(OperatorConfiguration config) : IOperatorCommand
 
     private V1Namespace CreateNamespace(OperatorConfiguration config) =>
             KubernetesObjectBuilder.Create<V1Namespace>()
-            .WithName(config.Namespace)
+            .WithName(NamespaceOverride)
             .Add(x => config.Install.ConfigureNamespace?.Invoke(x))
             .Build();
 
-    private V1Deployment CreateDeployment(OperatorConfiguration config)
+    private static V1Deployment CreateDeployment(OperatorConfiguration config)
         => KubernetesObjectBuilder.Create<V1Deployment>()
             .WithName($"{config.Name}")
-            .WithNamespace(config.Namespace)
             .WithLabel("operator", config.Name)
             .WithSpec(x =>
             {
@@ -214,7 +206,7 @@ public class InstallCommand(OperatorConfiguration config) : IOperatorCommand
             .Build();
 
 
-    internal static V1ClusterRole CreateClusterRole(OperatorConfiguration config, IEnumerable<Type> resources)
+    internal static V1ClusterRole CreateClusterRole(OperatorConfiguration config)
     {
         var clusterrole = KubernetesObjectBuilder.Create<V1ClusterRole>()
                     .WithName($"{config.Name}-role");
@@ -231,7 +223,7 @@ public class InstallCommand(OperatorConfiguration config) : IOperatorCommand
              .WithVerbs(["create", "update", "get"])
         );
 
-        var rules = resources
+        var rules = config.Install.Resources
             .Select(x => x.GetCustomAttribute<KubernetesEntityAttribute>())
             .Where(x => x is not null)
             .Select(x => x!)

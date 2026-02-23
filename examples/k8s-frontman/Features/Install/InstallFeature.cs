@@ -27,7 +27,6 @@ public static class InstallFeature
             builder.Install.AdditionalObjects.Add(
                 KubernetesObjectBuilder.Create<V1Service>()
                     .WithName(builder.Name)
-                    .WithNamespace(builder.Namespace)
                     .WithLabel("operator", builder.Name)
                     .WithSpec(s =>
                     {
