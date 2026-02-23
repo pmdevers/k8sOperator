@@ -18,10 +18,9 @@ public partial record OperatorConfiguration
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(Name);
         ArgumentException.ThrowIfNullOrWhiteSpace(Version);
-        ArgumentException.ThrowIfNullOrWhiteSpace(Namespace);
 
         ValidateKubernetesName(Name, nameof(Name), "Operator name");
-        ValidateKubernetesName(Namespace, nameof(Namespace), "Namespace");
+        ValidateKubernetesName(Namespace ?? "default", nameof(Namespace), "Namespace");
     }
 
     private static void ValidateKubernetesName(string value, string paramName, string displayName)
