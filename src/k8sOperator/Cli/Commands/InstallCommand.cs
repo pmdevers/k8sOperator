@@ -59,6 +59,12 @@ public class InstallCommand(OperatorConfiguration config) : IOperatorCommand
         if (!SkipDeployment)
         {
             var deployment = CreateDeployment(config);
+
+            if (!string.IsNullOrEmpty(NamespaceOverride))
+            {
+                deployment.Metadata.NamespaceProperty = NamespaceOverride;
+            }
+            
             await Write(deployment);
         }
 
