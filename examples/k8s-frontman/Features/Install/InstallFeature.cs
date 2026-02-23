@@ -32,7 +32,7 @@ public static class InstallFeature
                     .WithSpec(s =>
                     {
                         s.WithSelector("operator", builder.Name);
-                        s.WithPort(8080, 8080);
+                        s.WithPort("web", 8080, 8080);
                     }).Build()
             );
 

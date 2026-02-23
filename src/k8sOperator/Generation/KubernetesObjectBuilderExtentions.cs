@@ -140,16 +140,17 @@ public static class KubernetesObjectBuilderExtentions
             builder.Add(x => x.Type = type);
             return builder;
         }
-        public IObjectBuilder<T> WithPort(int port, int targetPort, string protocol = "TCP")
+        public IObjectBuilder<T> WithPort(string name, int port, int targetPort, string protocol = "TCP")
         {
             builder.Add(x =>
             {
                 x.Ports ??= [];
                 x.Ports.Add(new V1ServicePort
                 {
+                    Name = name,
                     Port = port,
                     TargetPort = targetPort,
-                    Protocol = protocol
+                    Protocol = protocol,
                 });
             });
             return builder;
